@@ -1113,8 +1113,7 @@ if "malware_result" in st.session_state:
             ))
 
             fig_kg.update_layout(
-                **_PLOT_LAYOUT,
-                showlegend=True,
+                **{**_PLOT_LAYOUT, "showlegend": True},
                 legend=dict(font=dict(color="#94a3b8", size=10), bgcolor="rgba(0,0,0,0)",
                             bordercolor="#1a1a1a", borderwidth=1, x=1.01, y=1.0, xanchor="left"),
                 height=480,
