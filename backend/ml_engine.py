@@ -192,6 +192,7 @@ def predict(observed: dict) -> dict[str, Any]:
             "top_group": None,
             "top_confidence": 0.0,
             "confidence_pct": 0.0,
+            "feature_vector_size": 0,
         }
 
 

@@ -110,8 +110,8 @@ async def retrace(
             for p in ml_res["predictions"][:5]
         ]
         result["ml_metadata"] = {
-            "version": ml_res["model_version"],
-            "features": ml_res["feature_vector_size"]
+            "version": ml_res.get("model_version", "unknown"),
+            "features": ml_res.get("feature_vector_size", 0)
         }
         
     except ValueError as e:
