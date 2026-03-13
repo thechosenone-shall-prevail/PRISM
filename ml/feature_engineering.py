@@ -1,5 +1,5 @@
 """
-APTrace — Feature Engineering Module
+PRISM — Feature Engineering Module
 Converts raw TTP observations into ML-ready feature vectors.
 
 This module bridges the engine's text extraction output and the ML model's

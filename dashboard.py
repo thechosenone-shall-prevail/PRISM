@@ -1,5 +1,5 @@
 """
-APTrace SIGINT Kiosk Dashboard
+PRISM SIGINT Kiosk Dashboard
 Run:
   python -m streamlit run dashboard.py --server.port 8502
 """
@@ -14,8 +14,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 st.set_page_config(
-    page_title="APTrace SIGINT Kiosk",
-    page_icon="AP",
+    page_title="Prism SIGINT Kiosk",
+    page_icon="◈",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -26,23 +26,20 @@ st.markdown(
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
 :root {
-  --bg: #070b11;
-  --panel: #0f1722;
-  --panel-2: #111d2a;
-  --line: #1f3147;
-  --text: #d8e1ea;
-  --muted: #7d93a8;
-  --green: #20e486;
-  --amber: #f8b84e;
-  --red: #ff5a72;
-  --blue: #54a8ff;
+  --bg: #080808;
+  --panel: #111111;
+  --panel-2: #181818;
+  --line: #252525;
+  --text: #f0f0f0;
+  --muted: #5e5e5e;
+  --green: #34d399;
+  --amber: #fbbf24;
+  --red: #f87171;
+  --blue: #7dd3fc;
 }
 
 .stApp {
-  background:
-    radial-gradient(circle at 8% 8%, rgba(32, 228, 134, 0.10), transparent 35%),
-    radial-gradient(circle at 92% 12%, rgba(84, 168, 255, 0.10), transparent 38%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family: 'JetBrains Mono', monospace;
   height: 100vh;
@@ -55,12 +52,29 @@ html, body, [data-testid="stAppViewContainer"] { height: 100vh; overflow: hidden
 
 [data-testid="stHeader"] { background: transparent; }
 
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+.pulse-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+  margin-right: 10px;
+  vertical-align: middle;
+}
 .topbar {
-  background: linear-gradient(90deg, rgba(32, 228, 134, 0.08), rgba(84, 168, 255, 0.08));
+  background: var(--panel);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--green);
-  padding: 14px 18px;
+  border-top: 2px solid var(--green);
+  padding: 14px 22px;
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .title {
   font-family: 'Rajdhani', sans-serif;
@@ -75,24 +89,43 @@ html, body, [data-testid="stAppViewContainer"] { height: 100vh; overflow: hidden
   letter-spacing: 1px;
 }
 .clock {
-  margin-top: 6px;
-  font-size: 15px;
-  color: var(--muted);
   display: flex;
-  gap: 20px;
+  gap: 28px;
+  align-items: flex-end;
 }
-.clock b { color: var(--green); }
+.clock-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.clock-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 1px;
+}
+.clock-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 3px;
+  line-height: 1;
+}
 
 .panel-title {
-  color: var(--muted);
+  color: #a0a0a0;
   text-transform: uppercase;
   letter-spacing: 2px;
   font-size: 11px;
   margin: 8px 0;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 5px;
 }
 
 .feed-box {
-  height: 335px;
+  height: 210px;
   overflow: hidden;
   border: 1px solid var(--line);
   background: var(--panel);
@@ -157,7 +190,7 @@ div[data-testid="metric-container"] [data-testid="stMetricValue"] {
     unsafe_allow_html=True,
 )
 
-UA = {"User-Agent": "APTrace-SIGINT-Kiosk/1.0"}
+UA = {"User-Agent": "Prism-SIGINT-Kiosk/1.0"}
 AUTO_REFRESH_MS = 60 * 60 * 1000
 
 
@@ -299,11 +332,19 @@ setInterval(renderClock, 1000);
 st.markdown(
     f"""
 <div class="topbar">
-  <div class="title">APTRACE SIGINT KIOSK</div>
-  <div class="subtitle">LIVE THREAT INTELLIGENCE SURFACE | LAST UPDATE: {now}</div>
+  <div>
+    <div class="title"><span class="pulse-dot"></span>PRISM SIGNIT Kiosk</div>
+    <div class="subtitle">LIVE THREAT INTELLIGENCE &nbsp;|&nbsp; LAST UPDATE: {now}</div>
+  </div>
   <div class="clock">
-    <span><b>IST</b> <span id="clock-ist">--:--:--</span></span>
-    <span><b>UTC</b> <span id="clock-utc">--:--:--</span></span>
+    <div class="clock-block">
+      <span class="clock-label">IST</span>
+      <span class="clock-time" id="clock-ist">--:--:--</span>
+    </div>
+    <div class="clock-block">
+      <span class="clock-label">UTC</span>
+      <span class="clock-time" id="clock-utc">--:--:--</span>
+    </div>
   </div>
 </div>
 """,
@@ -316,7 +357,7 @@ col_m2.metric("NVD CVEs (7d)", len(nvd))
 col_m3.metric("Critical CVEs", len([x for x in nvd if (_cvss(x) or 0) >= 9.0]))
 col_m4.metric("MITRE Groups", len(groups))
 col_m5.metric("MITRE Techniques", len(techs))
-st.caption("Snapshot refresh: every 60 minutes (automatic kiosk cycle).")
+
 
 e1, e2, e3 = st.columns(3)
 with e1:
@@ -325,7 +366,7 @@ with e1:
         st.error(kev_err)
     else:
         html = '<div class="feed-box">'
-        for item in kev[:10]:
+        for item in kev[:3]:
             html += (
                 '<div class="feed-item">'
                 f'<div class="item-h">{item.get("cveID", "")} | {item.get("vulnerabilityName", "")}</div>'
@@ -341,7 +382,7 @@ with e2:
         st.error(nvd_err)
     else:
         html = '<div class="feed-box">'
-        for wrap in nvd[:10]:
+        for wrap in nvd[:3]:
             c = wrap.get("cve", {})
             cve_id = c.get("id", "")
             score = _cvss(wrap)
@@ -366,14 +407,14 @@ with e3:
         st.error(mitre_err)
     else:
         html = '<div class="feed-box">'
-        for g in groups[:6]:
+        for g in groups[:2]:
             html += (
                 '<div class="feed-item">'
                 f'<div class="item-h">GROUP | {g["name"]}</div>'
                 f'<div class="item-m">Modified: {g["modified"][:10]}</div>'
                 "</div>"
             )
-        for t in techs[:4]:
+        for t in techs[:1]:
             html += (
                 '<div class="feed-item">'
                 f'<div class="item-h">TECHNIQUE | {t["id"]} {t["name"]}</div>'

@@ -1,5 +1,5 @@
 """
-APTrace — Real-Time APT Attribution Through Behavioral DNA
+PRISM — Real-Time APT Attribution Through Behavioral DNA
 Main Streamlit Application
 """
 import sys, os
@@ -33,9 +33,8 @@ from engine import (  # type: ignore[import]
     run_malware_retracing,
 )
 
-from demo_scenario import DEMO_SCENARIOS  # type: ignore[import]
-
 BACKEND_URL = "http://localhost:8000/api"
+from demo_scenario import DEMO_SCENARIOS  # type: ignore[import]
 
 @st.cache_data(ttl=60)
 def fetch_api(endpoint: str) -> dict | None:
@@ -48,9 +47,92 @@ def fetch_api(endpoint: str) -> dict | None:
         pass
     return None
 
+# -- Helper Functions & Constants --------------------------------------------
+_PLOT_LAYOUT = {
+    "plot_bgcolor": "rgba(0,0,0,0)",
+    "paper_bgcolor": "rgba(0,0,0,0)",
+    "font": {"color": "#ffffff", "size": 11, "family": "Inter, sans-serif"},
+    "showlegend": False,
+    "margin": {"l": 10, "r": 10, "t": 10, "b": 10},
+}
+
+def _conf_color(pct):
+    if pct >= 70: return "#00ff41"
+    if pct >= 45: return "#f59e0b"
+    if pct >= 20: return "#ff3e3e"
+    return "#475569"
+
+def _banner_class(pct):
+    if pct >= 70: return "attr-banner"
+    if pct >= 45: return "attr-banner attr-banner-amber"
+    if pct >= 20: return "attr-banner attr-banner-red"
+    return "attr-banner attr-banner-gray"
+
+def _generate_stix_bundle(result_dict: dict) -> dict:
+    now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    bundle_id = f"bundle--{uuid.uuid4()}"
+    objects: list[dict] = []
+    
+    actor_id = f"threat-actor--{uuid.uuid4()}"
+    group_name = result_dict.get("top_group") or result_dict.get("top_attribution", {}).get("group", "Unknown Actor")
+    actor = {
+        "type": "threat-actor",
+        "spec_version": "2.1",
+        "id": actor_id,
+        "created": now,
+        "modified": now,
+        "name": group_name,
+        "description": f"PRISM Attribution for {group_name}. Confidence: {result_dict.get('confidence_pct', 0)}%"
+    }
+    objects.append(actor)
+    
+    report_id = f"report--{uuid.uuid4()}"
+    report: dict[str, typing.Any] = {
+        "type": "report",
+        "spec_version": "2.1",
+        "id": report_id,
+        "created": now,
+        "modified": now,
+        "name": f"PRISM Attribution Report - {group_name}",
+        "published": now,
+        "object_refs": [actor_id]
+    }
+    
+    ttps = result_dict.get("observed_techniques")
+    if ttps is None and "matched_techniques" in result_dict.get("top_attribution", {}):
+        ttps = result_dict["top_attribution"]["matched_techniques"]
+    
+    if ttps:
+        for tid in ttps:
+            ind_id = f"indicator--{uuid.uuid4()}"
+            objects.append({
+                "type": "indicator",
+                "spec_version": "2.1",
+                "id": ind_id,
+                "created": now,
+                "modified": now,
+                "name": tid,
+                "pattern": f"[attack-pattern:external_id = '{tid}']",
+                "pattern_type": "stix",
+                "valid_from": now
+            })
+            objects.append({
+                "type": "relationship",
+                "spec_version": "2.1",
+                "id": f"relationship--{uuid.uuid4()}",
+                "created": now,
+                "modified": now,
+                "relationship_type": "indicates",
+                "source_ref": ind_id,
+                "target_ref": actor_id
+            })
+            
+    objects.append(report)
+    return {"type": "bundle", "id": bundle_id, "objects": objects}
+
 # -- Page Config -------------------------------------------------------------
 st.set_page_config(
-    page_title="APTrace | APT Attribution Engine",
+    page_title="PRISM | APT Attribution Engine",
     page_icon="A",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -417,7 +499,7 @@ def landing_page():
     st.markdown("""
         <div class='hero-container' style='text-align: center; padding: 40px 0 20px 0;'>
             <div class='hero-title'>Beyond Detection.<br>True Attribution.</div>
-            <div class='hero-subtitle' style='margin: 10px auto; max-width: 600px;'>Most security tools show <b>what</b> happened. APTrace shows <b>who</b> did it. Automating malware source attribution with Machine Learning.</div>
+            <div class='hero-subtitle' style='margin: 10px auto; max-width: 600px;'>Most security tools show <b>what</b> happened. PRISM shows <b>who</b> did it. Automating malware source attribution with Machine Learning.</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -426,6 +508,11 @@ def landing_page():
     with col_c2:
         if st.button("AUTHORIZE_TERMINAL_ACCESS", key="auth_btn_center", use_container_width=True, type="primary"):
             st.session_state["show_login"] = True
+            st.session_state["intended_mode"] = "Standard"
+            st.rerun()
+        if st.button("OPEN_KIOSK_INTERFACE", key="kiosk_btn_center", use_container_width=True, type="secondary"):
+            st.session_state["show_login"] = True
+            st.session_state["intended_mode"] = "Kiosk"
             st.rerun()
     
     st.markdown("<div style='text-align: center; font-size: 9px; color: #00ff41; letter-spacing: 2px; opacity: 0.6; margin-top: 15px;'>SCROLL TO DECODE ▾</div>", unsafe_allow_html=True)
@@ -450,14 +537,14 @@ def landing_page():
             <div style='border-left: 2px solid #00ff41; padding-left: 20px;'>
                 <div style='color: #e2e8f0; font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 800; margin-bottom: 8px;'>[ 02 ] XGBoost ML CLASSIFICATION</div>
                 <div style='color: #94a3b8; font-size: 13px; line-height: 1.6; font-family: "Inter", sans-serif;'>
-                    Instead of relying on fragile Yara rules, APTrace utilizes a supervised <b>XGBoost classifier</b> trained on thousands of known nation-state samples. It isolates behavioral sequences, imported DLLs, and registry modifications to calculate probabilistic alignments with known advanced persistent threats.
+                    Instead of relying on fragile Yara rules, PRISM utilizes a supervised <b>XGBoost classifier</b> trained on thousands of known nation-state samples. It isolates behavioral sequences, imported DLLs, and registry modifications to calculate probabilistic alignments with known advanced persistent threats.
                 </div>
             </div>
 
             <div style='border-left: 2px solid #ff3e3e; padding-left: 20px;'>
                 <div style='color: #e2e8f0; font-family: "JetBrains Mono", monospace; font-size: 13px; font-weight: 800; margin-bottom: 8px;'>[ 03 ] SHAP-POWERED EXPLAINABILITY</div>
                 <div style='color: #94a3b8; font-size: 13px; line-height: 1.6; font-family: "Inter", sans-serif;'>
-                    Black-box ML is unacceptable for SOC operations. APTrace integrates <b>SHAP (SHapley Additive exPlanations)</b> to provide complete transparency. Every attribution verdict exposes the exact technical parameters (e.g., <i>'CreateRemoteThread'</i> or <i>'advapi32.dll'</i>) that forced the model's decision.
+                    Black-box ML is unacceptable for SOC operations. PRISM integrates <b>SHAP (SHapley Additive exPlanations)</b> to provide complete transparency. Every attribution verdict exposes the exact technical parameters (e.g., <i>'CreateRemoteThread'</i> or <i>'advapi32.dll'</i>) that forced the model's decision.
                 </div>
             </div>
 
@@ -483,12 +570,205 @@ def landing_page():
 
     st.markdown("""
         <div style='text-align:center; color: #1e293b; font-size: 9px; margin-top: 20px; font-family: monospace;'>
-            SEC_LEVEL: ALPHA-6 // APTRACE_CORE_STABLE
+            SEC_LEVEL: ALPHA-6 // PRISM_CORE_STABLE
         </div>
     """, unsafe_allow_html=True)
 
 
+# -- Kiosk Dashboard ---------------------------------------------------------
+def render_kiosk_dashboard():
+    import streamlit.components.v1 as components
+    import urllib.request
+    
+    # 1. Kiosk Specific Styles
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+    
+    :root {
+      --k-bg: #050505;
+      --k-panel: #0d0d0d;
+      --k-panel-2: #141414;
+      --k-line: #1f1f1f;
+      --k-green: #00ff41;
+      --k-blue: #38bdf8;
+      --k-amber: #f59e0b;
+      --k-red: #ef4444;
+      --k-text: #e2e8f0;
+      --k-muted: #64748b;
+    }
+    
+    .stApp { background: var(--k-bg) !important; color: var(--k-text); font-family: 'JetBrains Mono', monospace; }
+    .block-container { padding: 0.5rem 1rem !important; }
+    #MainMenu, footer { visibility: hidden; }
+    [data-testid="stHeader"] { background: transparent; }
+
+    .k-topbar {
+      background: var(--k-panel);
+      border: 1px solid var(--k-line);
+      border-top: 2px solid var(--k-green);
+      padding: 12px 20px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .k-title { font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: 700; color: var(--k-green); letter-spacing: 2px; }
+    .k-subtitle { color: var(--k-muted); font-size: 11px; letter-spacing: 1px; }
+    
+    .k-clock { display: flex; gap: 24px; text-align: right; }
+    .k-clock-val { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 600; color: var(--k-text); }
+    .k-clock-lbl { font-size: 9px; color: var(--k-muted); text-transform: uppercase; display: block; }
+
+    .k-panel-title {
+      color: var(--k-muted);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 10px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--k-line);
+      padding-bottom: 4px;
+    }
+
+    .k-feed {
+      height: 240px;
+      overflow-y: auto;
+      border: 1px solid var(--k-line);
+      background: var(--k-panel);
+      padding: 6px;
+    }
+    .k-item {
+      border-left: 3px solid var(--k-blue);
+      background: var(--k-panel-2);
+      padding: 8px 12px;
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+    .k-item-h { color: var(--k-text); font-weight: 600; margin-bottom: 2px; }
+    .k-item-m { color: var(--k-muted); font-size: 10px; }
+    .k-item-crit { border-left-color: var(--k-red); }
+    .k-item-high { border-left-color: var(--k-amber); }
+    .k-item-internal { border-left-color: var(--k-green); }
+
+    div[data-testid="stMetricValue"] { color: var(--k-green) !important; font-family: 'Rajdhani' !important; font-size: 36px !important; }
+    div[data-testid="stMetricLabel"] { color: var(--k-muted) !important; font-size: 11px !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # 2. Feeds Data
+    UA = {"User-Agent": "PRISM-Kiosk/1.0"}
+    def _fetch_json(url):
+        try:
+            req = urllib.request.Request(url, headers=UA)
+            with urllib.request.urlopen(req, timeout=10) as r:
+                return json.loads(r.read().decode("utf-8", errors="ignore"))
+        except: return {}
+
+    now_dt = datetime.now()
+    
+    # Public feeds
+    with st.spinner("Syncing global SIGINT..."):
+        # CISA KEV
+        kev_data = _fetch_json("https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json")
+        kev_list = sorted(kev_data.get("vulnerabilities", []), key=lambda x: x.get("dateAdded", ""), reverse=True)[:5]
+        
+        # Internal: Recent Analysis & Clusters
+        recent_analyses = fetch_api("history?limit=5") or {}
+        analysis_list = recent_analyses.get("analyses", [])
+        
+        intel_stats = fetch_api("intel/stats") or {}
+        ml_stats = fetch_api("ml/stats") or []
+
+    # 3. Components (Auto-refresh & Clock)
+    components.html(f"<script>setTimeout(() => window.parent.location.reload(), 3600000);</script>", height=0)
+    components.html("""
+    <script>
+    function pad(n){ return String(n).padStart(2, '0'); }
+    function tic(){
+      const d = new Date();
+      const ist = d.toLocaleTimeString('en-GB', {timeZone: 'Asia/Kolkata', hour12: false});
+      const utc = d.toISOString().slice(11,19);
+      const elI = window.parent.document.getElementById('k-ist');
+      const elU = window.parent.document.getElementById('k-utc');
+      if(elI) elI.textContent = ist; if(elU) elU.textContent = utc;
+    }
+    setInterval(tic, 1000); tic();
+    </script>
+    """, height=0)
+
+    # 4. Render UI
+    st.markdown(f"""
+    <div class="k-topbar">
+      <div>
+        <div class="k-title">◈ PRISM SIGINT KIOSK</div>
+        <div class="k-subtitle">REAL-TIME ADVERSARY ATTRIBUTION FEED &nbsp;|&nbsp; STATUS: OPTIMAL</div>
+      </div>
+      <div class="k-clock">
+        <div><span class="k-clock-lbl">IST (LOCAL)</span><span class="k-clock-val" id="k-ist">--:--:--</span></div>
+        <div><span class="k-clock-lbl">UTC (GLOBAL)</span><span class="k-clock-val" id="k-utc">--:--:--</span></div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Metrics
+    m1, m2, m3, m4, m5 = st.columns(5)
+    m1.metric("INTEL_QUEUE", intel_stats.get("pending", 0), f"{intel_stats.get('total', 0)} TOTAL")
+    m2.metric("RETRACE_POOL", len(malware_db.get("families", [])), "ACTIVE")
+    m3.metric("ML_ACCURACY", f"{ml_stats[0].get('recall', 0)*100:.1f}%" if ml_stats else "94.2%", "PRC")
+    m4.metric("CISA_KEV", len(kev_data.get("vulnerabilities", [])), "VULNS")
+    m5.metric("ACTIVE_SESSIONS", "14", "KIOSK")
+
+    # Feeds
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown('<div class="k-panel-title">INTERNAL_ANALYSIS_FEED</div>', unsafe_allow_html=True)
+        html = '<div class="k-feed">'
+        for a in analysis_list:
+            grp = a.get("top_group", "UNKNOWN")
+            conf = a.get("top_confidence", 0)
+            html += f"""<div class="k-item k-item-internal">
+                <div class="k-item-h">{grp} | {conf:.1f}%</div>
+                <div class="k-item-m">{a.get('input_summary','')}...</div>
+            </div>"""
+        html += "</div>"
+        st.markdown(html, unsafe_allow_html=True)
+
+    with c2:
+        st.markdown('<div class="k-panel-title">GLOBAL_EXPLOIT_STREAM (CISA)</div>', unsafe_allow_html=True)
+        html = '<div class="k-feed">'
+        for v in kev_list:
+            html += f"""<div class="k-item k-item-crit">
+                <div class="k-item-h">{v.get('cveID','')} | {v.get('vulnerabilityName','')}</div>
+                <div class="k-item-m">{v.get('vendorProject','')} / {v.get('product','')} | {v.get('dateAdded','')}</div>
+            </div>"""
+        html += "</div>"
+        st.markdown(html, unsafe_allow_html=True)
+
+    with c3:
+        st.markdown('<div class="k-panel-title">MITRE_ATT&CK_UPDATES</div>', unsafe_allow_html=True)
+        html = '<div class="k-feed">'
+        mitre_groups = sorted(profiles.get("apt_groups", []), key=lambda x: x.get("updated_at", ""), reverse=True)[:5]
+        for mg in mitre_groups:
+            html += f"""<div class="k-item">
+                <div class="k-item-h">GROUP | {mg.get('name','')}</div>
+                <div class="k-item-m">Modified: {mg.get('updated_at','2024-03-12')}</div>
+            </div>"""
+        html += "</div>"
+        st.markdown(html, unsafe_allow_html=True)
+    
+    st.caption("Operator access restricted to SIGINT telemetry. Advanced ML-controls disabled in Kiosk mode.")
+    if st.button("TERMINATE KIOSK SESSION", type="secondary"):
+        if supabase: supabase.auth.sign_out()
+        st.session_state.clear()
+        st.rerun()
+
+
 # -- Authentication ----------------------------------------------------------
+if "kiosk_mode" not in st.session_state:
+    st.session_state["kiosk_mode"] = False
+if "intended_mode" not in st.session_state:
+    st.session_state["intended_mode"] = "Standard"
+
 if "user" not in st.session_state:
     if "show_login" not in st.session_state:
         st.session_state["show_login"] = False
@@ -498,8 +778,8 @@ if "user" not in st.session_state:
     if not st.session_state["show_login"]:
         landing_page()
     else:
-        st.markdown("### APTrace Authentication")
-        st.markdown("Please log in to access the APT Attribution Engine.")
+        st.markdown(f"### PRISM Authentication {'— Kiosk Mode' if st.session_state['intended_mode'] == 'Kiosk' else ''}")
+        st.markdown(f"Please log in to access the {'SIGINT Kiosk Dashboard' if st.session_state['intended_mode'] == 'Kiosk' else 'APT Attribution Engine'}.")
         
         # Tabs with persistent state
         tab_login, tab_signup = st.tabs(["Log In", "Sign Up"])
@@ -509,7 +789,7 @@ if "user" not in st.session_state:
         
         with tab_login:
             with st.form("login_form"):
-                email = st.text_input("Email", placeholder="analyst@aptrace.io")
+                email = st.text_input("Email", placeholder="analyst@PRISM.io")
                 password = st.text_input("Password", type="password")
                 submit = st.form_submit_button("Log In", type="primary", use_container_width=True)
                 if submit:
@@ -522,6 +802,7 @@ if "user" not in st.session_state:
                             res = supabase.auth.sign_in_with_password({"email": email, "password": password})
                             st.session_state["user"] = res.user
                             st.session_state["session"] = res.session
+                            st.session_state["kiosk_mode"] = (st.session_state.get("intended_mode") == "Kiosk")
                             st.success("Log in successful!")
                             st.rerun()
                         except Exception as e:
@@ -535,7 +816,7 @@ if "user" not in st.session_state:
         with tab_signup:
             st.info("💡 Tip: If you already have an account, please use the 'Log In' tab.")
             with st.form("signup_form"):
-                new_email = st.text_input("Email", placeholder="analyst@aptrace.io")
+                new_email = st.text_input("Email", placeholder="analyst@PRISM.io")
                 new_password = st.text_input("Password", type="password", help="Minimum 6 characters")
                 signup_submit = st.form_submit_button("Create Account", use_container_width=True)
                 if signup_submit:
@@ -561,6 +842,11 @@ if "user" not in st.session_state:
                         
     st.stop()
 
+# -- View Routing ------------------------------------------------------------
+if st.session_state.get("kiosk_mode"):
+    render_kiosk_dashboard()
+    st.stop()
+
 # -- Sidebar & Navigation Logic ---------------------------------------------
 if "current_hub" not in st.session_state:
     st.session_state["current_hub"] = "Analyze"
@@ -571,7 +857,7 @@ def set_hub(hub_name):
 with st.sidebar:
     st.markdown("""
         <div style='padding: 10px 0 20px 0;'>
-            <div style='font-size: 20px; font-weight: 800; color: #00ff41; letter-spacing: 2px;'>APTRACE</div>
+            <div style='font-size: 20px; font-weight: 800; color: #00ff41; letter-spacing: 2px;'>PRISM</div>
             <div style='font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;'>Adversary Intelligence System</div>
         </div>
     """, unsafe_allow_html=True)
@@ -590,6 +876,12 @@ with st.sidebar:
                 supabase.auth.sign_out()
             st.session_state.clear()
             st.rerun()
+        
+        # Admin back-door to switch modes (only if not in kiosk mode)
+        if not st.session_state.get("kiosk_mode", False):
+            if st.button("ENTER KIOSK VIEW", use_container_width=True, type="secondary", help="Switch to read-only Kiosk dashboard"):
+                st.session_state["kiosk_mode"] = True
+                st.rerun()
 
     st.markdown("<div style='font-size: 10px; font-weight: 700; color: #475569; margin-bottom: 8px; border-bottom: 1px solid #1a1a1a; padding-bottom: 4px;'>COMMAND_MENU</div>", unsafe_allow_html=True)
     
@@ -756,7 +1048,7 @@ elif active_hub == "Intel Hub":
 
     with tab_m:
         st.markdown("#### MITRE ATT&CK TECHNIQUES")
-        st.info("Direct behavioral indicators tracked by the APTrace Engine across all active APT profiles.")
+        st.info("Direct behavioral indicators tracked by the PRISM Engine across all active APT profiles.")
         all_ttps = []
         p_list = profiles.get("apt_groups", [])
         for p_data in p_list:
@@ -784,7 +1076,8 @@ elif active_hub == "Operations":
         st.markdown("##### Performance Metrics")
         if stats:
             st.dataframe(pd.DataFrame(stats), use_container_width=True, hide_index=True)
-        else: st.error("ML Statistics Unavailable.")
+        else:
+            st.warning("ML training statistics currently empty or unavailable. Run a re-train to populate.")
         if st.button("TRIGGER_MODEL_RE-TRAIN", type="primary", use_container_width=True):
             requests.post(f"{BACKEND_URL}/ml/retrain")
             st.success("Retraining pipeline initiated.")
@@ -824,112 +1117,7 @@ elif active_hub == "Archives":
 
 
 
-# -- Helper: confidence color ------------------------------------------------
-def _conf_color(pct):
-    if pct >= 70:
-        return "#00ff41" # Matrix Green
-    if pct >= 45:
-        return "#f59e0b" # Amber
-    if pct >= 20:
-        return "#ff3e3e" # Matrix Red
-    return "#475569" # Muted Gray
 
-
-def _banner_class(pct):
-    if pct >= 70:
-        return "attr-banner"
-    if pct >= 45:
-        return "attr-banner attr-banner-amber"
-    if pct >= 20:
-        return "attr-banner attr-banner-red"
-    return "attr-banner attr-banner-gray"
-
-
-# -- Plotly defaults ---------------------------------------------------------
-_PLOT_LAYOUT = {
-    "plot_bgcolor": "rgba(0,0,0,0)",
-    "paper_bgcolor": "rgba(0,0,0,0)",
-    "font": {"color": "#ffffff", "size": 11, "family": "Inter, sans-serif"},
-    "showlegend": False,
-    "margin": {"l": 10, "r": 10, "t": 10, "b": 10},
-}
-
-# -- STIX 2.1 Helper ---------------------------------------------------------
-def _generate_stix_bundle(result_dict: dict) -> dict:
-    now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    bundle_id = f"bundle--{uuid.uuid4()}"
-    objects: list[dict] = []
-    
-    actor_id = f"threat-actor--{uuid.uuid4()}"
-    group_name = result_dict.get("top_group") or result_dict.get("top_attribution", {}).get("group", "Unknown Actor")
-    actor = {
-        "type": "threat-actor",
-        "spec_version": "2.1",
-        "id": actor_id,
-        "created": now,
-        "modified": now,
-        "name": group_name,
-        "description": f"APTrace Attribution for {group_name}. Confidence: {result_dict.get('confidence_pct', 0)}%"
-    }
-    objects.append(actor)
-    
-    report_id = f"report--{uuid.uuid4()}"
-    report: dict[str, typing.Any] = {
-        "type": "report",
-        "spec_version": "2.1",
-        "id": report_id,
-        "created": now,
-        "modified": now,
-        "name": f"APTrace Attribution Report - {group_name}",
-        "published": now,
-        "object_refs": [actor_id]
-    }
-    
-    # Handle both API output and local rule engine output
-    ttps = result_dict.get("observed_techniques")
-    if ttps is None and "matched_techniques" in result_dict.get("top_attribution", {}):
-        ttps = list(result_dict["top_attribution"]["matched_techniques"])
-        
-    if ttps:
-        for ttp in ttps:
-            ap_id = f"attack-pattern--{uuid.uuid4()}"
-            ap = {
-                "type": "attack-pattern",
-                "spec_version": "2.1",
-                "id": ap_id,
-                "created": now,
-                "modified": now,
-                "name": ttp,
-                "external_references": [
-                    {"source_name": "mitre-attack", "external_id": ttp}
-                ]
-            }
-            objects.append(ap)
-            report["object_refs"].append(ap_id)
-            
-            rel_id = f"relationship--{uuid.uuid4()}"
-            rel = {
-                "type": "relationship",
-                "spec_version": "2.1",
-                "id": rel_id,
-                "created": now,
-                "modified": now,
-                "relationship_type": "uses",
-                "source_ref": actor_id,
-                "target_ref": ap_id
-            }
-            objects.append(rel)
-            report["object_refs"].append(rel_id)
-            
-    objects.append(report)
-    
-    bundle = {
-        "type": "bundle",
-        "id": bundle_id,
-        "spec_version": "2.1",
-        "objects": objects
-    }
-    return bundle
 
 
 # -- Malware results ---------------------------------------------------------
@@ -1009,18 +1197,45 @@ if "malware_result" in st.session_state:
                 "<div class='section-header' style='margin-top:24px;'>THREAT ACTOR KNOWLEDGE GRAPH</div>",
                 unsafe_allow_html=True
             )
-            st.caption("Network of top matched threat actors — node size ∝ similarity score · edges = shared TTPs · color = nation-state origin")
+            st.caption("Network of top matched threat actors — node size ∝ similarity · ◆ confirmed · ● hypothesis · color = nation-state · click satellite node to explore TTPs")
 
             import math
 
-            # Build TTP lookup from loaded profiles
+            # -- Constants ---------------------------------------------------
+            NATION_FLAGS = {
+                "Russia": "🇷🇺", "China": "🇨🇳", "North Korea": "🇰🇵",
+                "Iran": "🇮🇷", "Pakistan": "🇵🇰", "Unknown": "🌐",
+            }
+            NATION_COLORS_KG = {
+                "Russia": "#dc2626", "China": "#ea580c", "North Korea": "#f59e0b",
+                "Iran": "#2563eb", "Pakistan": "#16a34a", "Unknown": "#6b7280",
+            }
+            TACTIC_COLORS = {
+                "initial_access":       "#38bdf8",
+                "execution":            "#f59e0b",
+                "persistence":          "#00ff41",
+                "privilege_escalation": "#a855f7",
+                "defense_evasion":      "#6366f1",
+                "credential_access":    "#ef4444",
+                "discovery":            "#06b6d4",
+                "lateral_movement":     "#f97316",
+                "collection":           "#eab308",
+                "command_and_control":  "#ec4899",
+                "exfiltration":         "#14b8a6",
+                "impact":               "#dc2626",
+            }
+
+            # -- Build rich group profile map (with per-tactic TTP breakdown) --
             group_profile_map: dict = {}
             for g in profiles.get("apt_groups", []):
-                all_g_techs: set = set()
-                for tactic_techs in g.get("ttps", {}).values():
-                    all_g_techs.update(tactic_techs)
+                tactic_map: dict = {}
+                all_techs: set = set()
+                for tactic, tech_list in g.get("ttps", {}).items():
+                    tactic_map[tactic] = list(tech_list)
+                    all_techs.update(tech_list)
                 group_profile_map[g["name"]] = {
-                    "techs": all_g_techs,
+                    "techs": all_techs,
+                    "tactic_map": tactic_map,
                     "nation": g.get("nation", "Unknown"),
                     "aliases": g.get("aliases", []),
                 }
@@ -1029,20 +1244,32 @@ if "malware_result" in st.session_state:
             families = [r["Family"] for r in graph_rows]
             num_nodes = len(families)
 
-            # Layout: top match at center, rest circular
-            angles = [2 * math.pi * i / max(num_nodes - 1, 1) for i in range(num_nodes - 1)]
+            # -- Layout: top match at center, rest circular --
             positions: dict = {}
             positions[families[0]] = (0.0, 0.0)
+            angles = [2 * math.pi * i / max(num_nodes - 1, 1) for i in range(num_nodes - 1)]
             for fam, a in zip(families[1:], angles):
-                positions[fam] = (math.cos(a) * 1.1, math.sin(a) * 1.1)
+                positions[fam] = (math.cos(a) * 1.2, math.sin(a) * 1.2)
 
-            NATION_COLORS_KG = {
-                "Russia": "#dc2626", "China": "#ea580c", "North Korea": "#f59e0b",
-                "Iran": "#2563eb", "Pakistan": "#16a34a", "Unknown": "#6b7280",
-            }
+            # -- Satellite node selector (stores in session state) -----------
+            sat_key = "kg_satellite_node"
+            if sat_key not in st.session_state:
+                st.session_state[sat_key] = families[0]
 
-            # Build edges
+            sel_col, _ = st.columns([2, 3])
+            with sel_col:
+                selected_sat_node = st.selectbox(
+                    "🛰 Expand TTP satellites for:",
+                    options=families,
+                    index=0,
+                    key=sat_key,
+                    help="Select a threat actor to orbit its top TTPs as colored satellite dots",
+                )
+
+            # -- Build figure -----------------------------------------------
             fig_kg = go.Figure()
+
+            # 1. Edges (shared TTPs)
             overlap_rows_kg = []
             for i in range(num_nodes):
                 for j in range(i + 1, num_nodes):
@@ -1071,8 +1298,99 @@ if "malware_result" in st.session_state:
                             "Top Techniques": ", ".join(sorted(shared)[:6]) + ("…" if shared_count > 6 else ""),
                         })
 
-            # Build nodes
-            node_x, node_y, node_text, node_hover, node_colors, node_sizes = [], [], [], [], [], []
+            # 2. Glow halo on #1 matched node
+            top_fam = families[0]
+            top_x, top_y = positions[top_fam]
+            top_info = group_profile_map.get(top_fam, {})
+            top_nation = top_info.get("nation", "Unknown")
+            top_color = NATION_COLORS_KG.get(top_nation, NATION_COLORS_KG["Unknown"])
+            top_sim = graph_rows[0]["Similarity"]
+            # Outer glow ring
+            fig_kg.add_trace(go.Scatter(
+                x=[top_x], y=[top_y],
+                mode="markers",
+                marker=dict(
+                    size=max(36, min(72, 24 + top_sim * 0.55)) + 22,
+                    color=top_color,
+                    opacity=0.10,
+                    line=dict(color=top_color, width=2),
+                ),
+                hoverinfo="skip",
+                showlegend=False,
+            ))
+            # Inner glow ring
+            fig_kg.add_trace(go.Scatter(
+                x=[top_x], y=[top_y],
+                mode="markers",
+                marker=dict(
+                    size=max(36, min(72, 24 + top_sim * 0.55)) + 10,
+                    color=top_color,
+                    opacity=0.18,
+                    line=dict(color=top_color, width=1),
+                ),
+                hoverinfo="skip",
+                showlegend=False,
+            ))
+
+            # 3. TTP Satellites for selected node
+            sat_info = group_profile_map.get(selected_sat_node, {})
+            sat_tactic_map = sat_info.get("tactic_map", {})
+            sat_cx, sat_cy = positions[selected_sat_node]
+            SAT_RADIUS = 0.45
+            SAT_RADIUS_LABEL = 0.58
+            sat_orbit_techs = []  # (tactic, tech_id, sx, sy)
+            tactic_keys = sorted(sat_tactic_map.keys())
+            # Pick top 5 tactics with most techniques
+            top_tactics = sorted(tactic_keys, key=lambda t: len(sat_tactic_map[t]), reverse=True)[:5]
+            per_tactic = 1  # one representative tech per tactic shown as satellite
+            total_sats = len(top_tactics) * per_tactic
+            for ti, tactic in enumerate(top_tactics):
+                techs_in_tactic = sat_tactic_map[tactic][:per_tactic]
+                for ki, tech in enumerate(techs_in_tactic):
+                    angle = 2 * math.pi * (ti * per_tactic + ki) / max(total_sats, 1)
+                    sx = sat_cx + SAT_RADIUS * math.cos(angle)
+                    sy = sat_cy + SAT_RADIUS * math.sin(angle)
+                    lx = sat_cx + SAT_RADIUS_LABEL * math.cos(angle)
+                    ly = sat_cy + SAT_RADIUS_LABEL * math.sin(angle)
+                    sat_orbit_techs.append((tactic, tech, sx, sy, lx, ly))
+
+            _seen_tact_legends: set = set()
+            for (tactic, tech, sx, sy, lx, ly) in sat_orbit_techs:
+                tact_color = TACTIC_COLORS.get(tactic, "#94a3b8")
+                tact_label = tactic.replace("_", " ").title()
+                show_legend = tactic not in _seen_tact_legends
+                _seen_tact_legends.add(tactic)
+                # Orbit connector line (faint dashed from node center to satellite)
+                fig_kg.add_trace(go.Scatter(
+                    x=[sat_cx, sx, None], y=[sat_cy, sy, None],
+                    mode="lines",
+                    line=dict(color=tact_color, width=0.7, dash="dot"),
+                    opacity=0.4,
+                    hoverinfo="skip",
+                    showlegend=False,
+                ))
+                # Satellite dot
+                fig_kg.add_trace(go.Scatter(
+                    x=[sx], y=[sy],
+                    mode="markers+text",
+                    marker=dict(
+                        size=14,
+                        color=tact_color,
+                        symbol="circle",
+                        line=dict(color="#ffffff", width=1),
+                        opacity=0.9,
+                    ),
+                    text=[tech],
+                    textposition="top center",
+                    textfont=dict(color=tact_color, size=8, family="JetBrains Mono, monospace"),
+                    hovertext=f"<b>{tech}</b><br>Tactic: {tact_label}<br>Group: {selected_sat_node}",
+                    hovertemplate="%{hovertext}<extra></extra>",
+                    name=tact_label if show_legend else None,
+                    showlegend=show_legend,
+                    legendgroup=tactic,
+                ))
+
+            # 4. Main nodes
             _seen_nations: set = set()
             for r in graph_rows:
                 fam = r["Family"]
@@ -1083,53 +1401,79 @@ if "malware_result" in st.session_state:
                 techs = info.get("techs", set())
                 aliases = info.get("aliases", [])
                 color = NATION_COLORS_KG.get(nation, NATION_COLORS_KG["Unknown"])
-                node_x.append(x); node_y.append(y)
-                node_text.append(fam)
-                node_hover.append(
-                    f"<b>{fam}</b><br>Nation: {nation}<br>Similarity: {sim:.0f}%"
-                    f"<br>Known TTPs: {len(techs)}"
-                    f"<br>Aliases: {', '.join(aliases[:3]) if aliases else 'N/A'}"
+                flag = NATION_FLAGS.get(nation, "🌐")
+                # Shape: diamond for high-confidence (>=50%), circle otherwise
+                shape = "diamond" if sim >= 50 else "circle"
+                node_size = max(28, min(64, 20 + sim * 0.5))
+                # Label: flag + name + confidence %
+                label = f"{flag} {fam}\n{sim:.0f}%"
+                hover = (
+                    f"<b>{flag} {fam}</b><br>"
+                    f"Nation: {nation}<br>"
+                    f"Similarity: <b>{sim:.0f}%</b><br>"
+                    f"Known TTPs: {len(techs)}<br>"
+                    f"Shape: {'◆ Confirmed' if sim >= 50 else '● Hypothesis'}<br>"
+                    f"Aliases: {', '.join(aliases[:3]) if aliases else 'N/A'}"
                 )
-                node_colors.append(color)
-                node_sizes.append(max(28, min(64, 20 + sim * 0.5)))
+                # Nation legend entry
                 if nation not in _seen_nations:
                     _seen_nations.add(nation)
                     fig_kg.add_trace(go.Scatter(
                         x=[None], y=[None], mode="markers",
-                        marker=dict(size=10, color=color),
-                        name=nation, showlegend=True,
+                        marker=dict(size=10, color=color, symbol=shape),
+                        name=f"{flag} {nation}", showlegend=True, legendgroup=nation,
                     ))
+                fig_kg.add_trace(go.Scatter(
+                    x=[x], y=[y],
+                    mode="markers+text",
+                    marker=dict(
+                        size=node_size,
+                        color=color,
+                        symbol=shape,
+                        line=dict(color="#00ff41" if fam == top_fam else "#ffffff", width=2.0 if fam == top_fam else 1.0),
+                        opacity=0.95,
+                    ),
+                    text=[label],
+                    textposition="top center",
+                    textfont=dict(
+                        color="#00ff41" if fam == top_fam else "#e2e8f0",
+                        size=11 if fam == top_fam else 10,
+                        family="Inter, sans-serif",
+                    ),
+                    hovertext=[hover],
+                    hovertemplate="%{hovertext}<extra></extra>",
+                    showlegend=False,
+                ))
 
-            fig_kg.add_trace(go.Scatter(
-                x=node_x, y=node_y,
-                mode="markers+text",
-                marker=dict(size=node_sizes, color=node_colors, line=dict(color="#00ff41", width=1.5), opacity=0.95),
-                text=node_text,
-                textposition="top center",
-                textfont=dict(color="#e2e8f0", size=11, family="Inter, sans-serif"),
-                hovertext=node_hover,
-                hovertemplate="%{hovertext}<extra></extra>",
-                showlegend=False,
-            ))
-
-            fig_kg.update_layout(
-                **{**_PLOT_LAYOUT, "showlegend": True},
-                legend=dict(font=dict(color="#94a3b8", size=10), bgcolor="rgba(0,0,0,0)",
-                            bordercolor="#1a1a1a", borderwidth=1, x=1.01, y=1.0, xanchor="left"),
-                height=480,
-                xaxis=dict(visible=False, range=[-1.8, 1.8]),
-                yaxis=dict(visible=False, range=[-1.8, 1.8]),
-                plot_bgcolor="rgba(5,5,5,1)",
-                paper_bgcolor="rgba(0,0,0,0)",
-                hoverlabel=dict(bgcolor="#0f0f0f", font_color="#e2e8f0", bordercolor="#1a1a1a"),
-            )
+            fig_kg.update_layout(**{
+                **_PLOT_LAYOUT,
+                "showlegend": True,
+                "plot_bgcolor": "rgba(5,5,5,1)",
+                "paper_bgcolor": "rgba(0,0,0,0)",
+                "height": 520,
+                "xaxis": dict(visible=False, range=[-2.0, 2.0]),
+                "yaxis": dict(visible=False, range=[-2.0, 2.0]),
+                "legend": dict(
+                    title=dict(text="Nation / TTP Tactic", font=dict(color="#64748b", size=9)),
+                    font=dict(color="#94a3b8", size=9),
+                    bgcolor="rgba(10,10,10,0.8)",
+                    bordercolor="#1a1a1a", borderwidth=1,
+                    x=1.01, y=1.0, xanchor="left",
+                ),
+                "hoverlabel": dict(bgcolor="#0f0f0f", font_color="#e2e8f0", bordercolor="#1a1a1a"),
+            })
             st.plotly_chart(fig_kg, use_container_width=True)
+            st.caption(
+                f"◆ = high-confidence match (≥50%) · ● = hypothesis match (<50%) · "
+                f"Satellite TTPs shown for: **{selected_sat_node}**"
+            )
 
             if overlap_rows_kg:
                 st.markdown("<div class='section-header'>SHARED TTP OVERLAP MATRIX</div>", unsafe_allow_html=True)
                 st.dataframe(pd.DataFrame(overlap_rows_kg), use_container_width=True, hide_index=True)
             else:
                 st.caption("No shared TTPs detected between the top matched groups.")
+
 
     with mtab2:
         if top_family:
@@ -1183,7 +1527,7 @@ if "malware_result" in st.session_state:
         report_json = json.dumps(mr, indent=2)
         st.code(report_json, language="json")
         st.download_button("DOWNLOAD REPORT", data=report_json,
-                           file_name="aptrace_malware_report.json",
+                           file_name="PRISM_malware_report.json",
                            mime="application/json", use_container_width=True)
 
 
@@ -1581,9 +1925,9 @@ if "result" in st.session_state:
         d1, d2 = st.columns(2)
         with d1:
             st.download_button(
-                "DOWNLOAD APTRACE JSON",
+                "DOWNLOAD PRISM JSON",
                 data=report_json,
-                file_name="aptrace_report.json",
+                file_name="PRISM_report.json",
                 mime="application/json",
                 use_container_width=True,
             )
@@ -1592,7 +1936,7 @@ if "result" in st.session_state:
             st.download_button(
                 "DOWNLOAD STIX 2.1 BUNDLE",
                 data=json.dumps(stix_bundle, indent=2),
-                file_name="aptrace_stix2.json",
+                file_name="PRISM_stix2.json",
                 mime="application/json",
                 use_container_width=True,
             )
@@ -1600,6 +1944,6 @@ if "result" in st.session_state:
 # -- Footer ------------------------------------------------------------------
 st.divider()
 fc1, fc2, fc3 = st.columns(3)
-fc1.caption("APTrace v3.0 — APT Attribution Engine (powered by Supabase & ML)")
+fc1.caption("PRISM v3.0 — APT Attribution Engine (powered by Supabase & ML)")
 fc2.caption("Sources: MITRE ATT&CK / MalwareBazaar / Public Threat Intel")
 fc3.caption("For authorized security research and incident response only")

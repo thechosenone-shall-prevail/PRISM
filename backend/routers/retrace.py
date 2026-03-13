@@ -1,5 +1,5 @@
 """
-APTrace API — Malware Retracing Endpoint
+PRISM API — Malware Retracing Endpoint
 POST /api/retrace — malware file/hash attribution
 """
 

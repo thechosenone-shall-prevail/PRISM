@@ -1,5 +1,5 @@
 """
-APTrace — Data Migration Script
+PRISM — Data Migration Script
 Migrates existing JSON data files into Supabase PostgreSQL.
 
 Usage:
@@ -201,7 +201,7 @@ def migrate_intel_queue():
 
 def main():
     print("=" * 60)
-    print("APTrace — Data Migration to Supabase")
+    print("PRISM — Data Migration to Supabase")
     print("=" * 60)
     print(f"Project root: {PROJECT_ROOT}")
     print(f"Supabase URL: {SUPABASE_URL}")

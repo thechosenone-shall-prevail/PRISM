@@ -1,5 +1,5 @@
 """
-APTrace API — Intel Pipeline Endpoints
+PRISM API — Intel Pipeline Endpoints
 GET  /api/intel          — list intel queue items
 POST /api/intel          — ingest new intel item
 POST /api/intel/process  — process queued intel into training samples

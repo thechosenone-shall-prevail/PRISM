@@ -1,5 +1,5 @@
 """
-APTrace Core Attribution Engine
+PRISM Core Attribution Engine
 Extracts behavioral features from inputs and scores against APT profiles.
 """
 

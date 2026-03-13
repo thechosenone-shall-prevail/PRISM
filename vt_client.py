@@ -28,7 +28,7 @@ def get_file_report(file_hash: str) -> Optional[Dict[str, Any]]:
             data = response.json().get("data", {})
             attr = data.get("attributes", {})
             
-            # Extract key intel for the APTrace platform
+            # Extract key intel for the PRISM platform
             stats = attr.get("last_analysis_stats", {})
             malicious = stats.get("malicious", 0)
             total = sum(stats.values())

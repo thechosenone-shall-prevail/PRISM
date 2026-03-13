@@ -1,5 +1,5 @@
 """
-APTrace Backend — Configuration
+PRISM Backend — Configuration
 Loads environment variables for Supabase and ML model paths.
 """
 
@@ -17,7 +17,7 @@ SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
 SUPABASE_SERVICE_KEY: str = os.getenv("SUPABASE_SERVICE_KEY", "")
 
 # ML Model
-ML_MODEL_PATH: str = os.getenv("ML_MODEL_PATH", str(_BACKEND_DIR.parent / "ml" / "models" / "aptrace_model.pkl"))
+ML_MODEL_PATH: str = os.getenv("ML_MODEL_PATH", str(_BACKEND_DIR.parent / "ml" / "models" / "PRISM_model.pkl"))
 FEATURE_SCHEMA_PATH: str = os.getenv("FEATURE_SCHEMA_PATH", str(_BACKEND_DIR.parent / "ml" / "models" / "feature_schema.json"))
 
 # Engine

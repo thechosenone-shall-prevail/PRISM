@@ -1,5 +1,5 @@
 """
-APTrace API — History Endpoints
+PRISM API — History Endpoints
 GET /api/history — paginated analysis history
 GET /api/history/{id} — single analysis detail
 """

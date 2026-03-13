@@ -1,5 +1,5 @@
 """
-APTrace staged intel pipeline (no AI required).
+PRISM staged intel pipeline (no AI required).
 
 Stages:
 1) Ingest raw intel into local queue
@@ -973,7 +973,7 @@ def autopilot_watch(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="APTrace automatic intel pipeline")
+    parser = argparse.ArgumentParser(description="PRISM automatic intel pipeline")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_auto = sub.add_parser("autopilot-once", help="Fetch all live sources and auto-apply signature updates")

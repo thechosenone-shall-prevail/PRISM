@@ -1,5 +1,5 @@
 """
-APTrace Demo Scenarios
+PRISM Demo Scenarios
 Pre-built realistic attack scenarios for demonstration purposes.
 """
 

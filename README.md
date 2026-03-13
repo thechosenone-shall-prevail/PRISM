@@ -1,4 +1,4 @@
-# APTrace — Real-Time APT Attribution Through Behavioral DNA
+# PRISM — Real-Time APT Attribution Through Behavioral DNA
 
 > *"The next world war won't start with missiles. It already started with packets."*
 
@@ -72,13 +72,13 @@ These are **blogs and PDFs.**
 
 When an organization is actively being compromised right now — at 2am, during a live incident — no analyst has time to cross-reference a campaign report from 2021. No tool takes the artifacts they are seeing and tells them: *"This behavioral sequence matches Lazarus Group's 2023 financial sector campaign with 84% confidence, based on these five overlapping indicators."*
 
-**That tool does not exist publicly. APTrace builds it.**
+**That tool does not exist publicly. PRISM builds it.**
 
 ---
 
-## What APTrace Does
+## What PRISM Does
 
-APTrace is a real-time behavioral attribution platform. It does not ask: *"Is this file malicious?"*
+PRISM is a real-time behavioral attribution platform. It does not ask: *"Is this file malicious?"*
 
 It asks: *"Who operates like this?"*
 
@@ -94,7 +94,7 @@ Every APT group leaves fingerprints across three layers:
 | **Techniques** | Persistence methods, lateral movement, exfil patterns | Months to years — slow to change |
 | **Behavioral DNA** | Dev environment artifacts, working hours, target logic, code style | Years — almost never changes |
 
-VirusTotal operates entirely at Layer 1. Threat intel blogs document Layer 2 and 3 but provide no query interface. APTrace operates across all three layers with weighted scoring — placing the least trust in artifacts and the most trust in behavioral DNA.
+VirusTotal operates entirely at Layer 1. Threat intel blogs document Layer 2 and 3 but provide no query interface. PRISM operates across all three layers with weighted scoring — placing the least trust in artifacts and the most trust in behavioral DNA.
 
 ---
 
@@ -102,7 +102,7 @@ VirusTotal operates entirely at Layer 1. Threat intel blogs document Layer 2 and
 
 ### Input Layer
 
-APTrace accepts multiple artifact types as input — reflecting how real incidents surface:
+PRISM accepts multiple artifact types as input — reflecting how real incidents surface:
 
 - **Log files** (Windows Event Logs, Sysmon, EDR telemetry)
 - **Network captures** (PCAP files, DNS logs, proxy logs)
@@ -165,7 +165,7 @@ The weighting reflects the real-world stability of each layer. Artifacts change 
 
 ### Output
 
-For each analysis, APTrace produces:
+For each analysis, PRISM produces:
 
 1. **Top Attribution Candidates** — ranked list of APT groups with similarity scores
 2. **Confidence Score** — adjusted for data completeness and TTP drift probability
@@ -199,13 +199,13 @@ When you cannot attribute an attack, you cannot:
 - Inform leadership of the business and national security implications
 - Respond proportionately
 
-APTrace closes that gap — not with perfect certainty, but with structured, explainable, evidence-backed attribution that gives analysts a starting point within minutes instead of weeks.
+PRISM closes that gap — not with perfect certainty, but with structured, explainable, evidence-backed attribution that gives analysts a starting point within minutes instead of weeks.
 
 ---
 
-## What Makes APTrace Different
+## What Makes PRISM Different
 
-| Capability | VirusTotal | Threat Intel Blogs | MISP/OpenCTI | APTrace |
+| Capability | VirusTotal | Threat Intel Blogs | MISP/OpenCTI | PRISM |
 |---|---|---|---|---|
 | Single file analysis | ✅ | ❌ | ❌ | ✅ |
 | Multi-artifact campaign correlation | ❌ | ❌ | Partial | ✅ |
@@ -308,7 +308,7 @@ Accuracy note:
 
 ### 3) Confidence gates before attribution
 
-APTrace now enforces:
+PRISM now enforces:
 
 - Minimum evidence breadth (technique count + tactic coverage)
 - Minimum top score and lead over runner-up
@@ -333,7 +333,7 @@ This lets you track repeat campaigns before naming an actor.
 
 This is not just a hackathon project. The infrastructure being built here — a behavioral attribution layer above raw detection — is what national CERTs, SOC teams, and incident responders need as the cyber dimension of geopolitical conflict intensifies.
 
-VirusTotal solved yesterday's problem. APTrace is built for the threat environment that is already here.
+VirusTotal solved yesterday's problem. PRISM is built for the threat environment that is already here.
 
 ---
 

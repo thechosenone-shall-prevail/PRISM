@@ -1,5 +1,5 @@
 """
-APTrace Backend — Supabase Database Client
+PRISM Backend — Supabase Database Client
 Provides a singleton Supabase client and helper functions.
 """
 

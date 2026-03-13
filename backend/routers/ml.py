@@ -1,5 +1,5 @@
 """
-APTrace API — ML Management Endpoints
+PRISM API — ML Management Endpoints
 POST /api/ml/retrain — Pulls new feedback samples from Supabase, appends to training dataset, and triggers the XGBoost retraining pipeline.
 """
 

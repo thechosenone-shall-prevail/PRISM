@@ -1,5 +1,5 @@
 """
-APTrace API — Attribution Endpoint
+PRISM API — Attribution Endpoint
 POST /api/analyze — runs ML-powered APT attribution
 POST /api/analyze/feedback — analyst feedback for continuous learning
 """

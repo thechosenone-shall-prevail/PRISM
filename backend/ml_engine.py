@@ -1,5 +1,5 @@
 """
-APTrace Backend — ML Engine Module
+PRISM Backend — ML Engine Module
 Loads the trained model (.pkl) and runs inference for APT attribution.
 """
 
@@ -14,7 +14,7 @@ from config import ML_MODEL_PATH, FEATURE_SCHEMA_PATH
 
 import shap
 
-logger = logging.getLogger("aptrace.ml")
+logger = logging.getLogger("PRISM.ml")
 
 _model = None
 _explainer = None

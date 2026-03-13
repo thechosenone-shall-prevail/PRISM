@@ -1,5 +1,5 @@
 """
-APTrace — ML Model Training Pipeline
+PRISM — ML Model Training Pipeline
 Trains an XGBoost classifier for APT group attribution.
 
 Usage:
@@ -10,7 +10,7 @@ Expects:
     ml/data/feature_schema.json
 
 Outputs:
-    ml/models/aptrace_model.pkl
+    ml/models/PRISM_model.pkl
     ml/models/feature_schema.json (copied for backend)
     ml/models/training_metrics.json
 """
@@ -50,7 +50,7 @@ def main():
     # 1. Load data
     # -------------------------------------------------------------------------
     print("=" * 60)
-    print("APTrace ML Model Training Pipeline")
+    print("PRISM ML Model Training Pipeline")
     print("=" * 60)
 
     if not TRAINING_DATA_PATH.exists():
@@ -164,7 +164,7 @@ def main():
     # -------------------------------------------------------------------------
     # 7. Export model
     # -------------------------------------------------------------------------
-    model_path = MODEL_DIR / "aptrace_model.pkl"
+    model_path = MODEL_DIR / "PRISM_model.pkl"
     joblib.dump(model, model_path)
     print(f"\n✓ Model saved: {model_path}")
 

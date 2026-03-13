@@ -1,5 +1,5 @@
 """
-APTrace — Real-World Dataset Acquisition Utility
+PRISM — Real-World Dataset Acquisition Utility
 Helps download and label genuine malware samples for Phase 5 training.
 
 Note: This script requires a MalwareBazaar API key for downloads.
@@ -52,7 +52,7 @@ def fetch_malwarebazaar_hashes(tag: str, limit: int = 100):
     return []
 
 def main():
-    print("APTrace Real-World Data Acquisition")
+    print("PRISM Real-World Data Acquisition")
     print("-" * 40)
     
     all_real_samples = []

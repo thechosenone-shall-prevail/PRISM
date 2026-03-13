@@ -1,5 +1,5 @@
 """
-APTrace — Synthetic Training Data Generator
+PRISM — Synthetic Training Data Generator
 Generates labeled training samples from APT profiles for ML model training.
 
 Usage:

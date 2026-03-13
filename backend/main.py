@@ -1,5 +1,5 @@
 """
-APTrace Backend — FastAPI Application
+PRISM Backend — FastAPI Application
 Main entry point for the backend API.
 """
 
@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="APTrace API",
+    title="PRISM API",
     description="APT Attribution Engine — ML-powered threat actor identification",
     version="3.0.0",
     lifespan=lifespan,

@@ -1,5 +1,5 @@
 """
-Persistent storage for unattributed/emerging APTrace clusters.
+Persistent storage for unattributed/emerging PRISM clusters.
 """
 
 from __future__ import annotations

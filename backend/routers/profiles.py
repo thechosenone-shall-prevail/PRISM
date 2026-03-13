@@ -1,5 +1,5 @@
 """
-APTrace API — Profiles Endpoints
+PRISM API — Profiles Endpoints
 GET /api/profiles — list APT groups
 GET /api/profiles/{name} — get single group
 GET /api/families — list malware families
