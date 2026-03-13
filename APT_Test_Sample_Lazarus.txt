@@ -1,0 +1,30 @@
+Incident Response Observations - Case #IR-2024-0847
+
+Initial vector: Spearphishing email with malicious attachment sent to finance team.
+Macro-enabled Excel document dropped a loader upon opening.
+
+Week 1:
+- Encoded PowerShell payload executed via scheduled task
+- Process injection observed into legitimate Windows process (svchost)
+- VM detection and sandbox evasion routines identified in loader
+- LSASS memory access detected (credential dumping)
+- Obfuscated binary with packed sections identified
+
+Week 2:
+- Lateral movement via RDP using stolen credentials
+- Pass the hash observed for admin share access
+- Screen capture module deployed
+- Data staging in temp directory with zip compression
+- Cryptocurrency wallet files specifically targeted
+
+Week 3:
+- DNS tunneling for C2 beacon (randomized 2-4 hour intervals)
+- HTTPS exfiltration to actor-controlled domain
+- Multi-hop proxy chain through compromised hosts
+- Evidence of time-based delays in execution (sandbox evasion)
+- Inhibit system recovery - shadow copy deletion observed
+
+Target: cryptocurrency exchange
+Industry: Financial, Cryptocurrency
+Region: Southeast Asia
+Suspected motivation: Financial theft

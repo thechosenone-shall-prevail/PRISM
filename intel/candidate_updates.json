@@ -1,0 +1,295 @@
+{
+  "generated_at": "2026-03-11T14:21:55+00:00",
+  "queue_items": 20,
+  "skipped_items": 18,
+  "min_item_confidence": 0.45,
+  "proposal_count": 13,
+  "proposals": [
+    {
+      "candidate_id": "872f39628a6cff29",
+      "group": "Salt Typhoon",
+      "tactic": "credential_access",
+      "technique": "T1003",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.8788,
+      "item_ids": [
+        "bbad8e192fe663be"
+      ],
+      "sources": [
+        "Example CERT"
+      ],
+      "examples": [
+        {
+          "title": "Advisory: Spearphishing campaign targeting telecom providers",
+          "url": "https://example.org/advisory/2026-telecom-campaign",
+          "published_at": "2026-03-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "8a37267fb47108b3",
+      "group": "Salt Typhoon",
+      "tactic": "credential_access",
+      "technique": "T1003.001",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.8788,
+      "item_ids": [
+        "bbad8e192fe663be"
+      ],
+      "sources": [
+        "Example CERT"
+      ],
+      "examples": [
+        {
+          "title": "Advisory: Spearphishing campaign targeting telecom providers",
+          "url": "https://example.org/advisory/2026-telecom-campaign",
+          "published_at": "2026-03-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "af04ce96baa9d654",
+      "group": "Salt Typhoon",
+      "tactic": "exfiltration",
+      "technique": "T1041",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.8788,
+      "item_ids": [
+        "bbad8e192fe663be"
+      ],
+      "sources": [
+        "Example CERT"
+      ],
+      "examples": [
+        {
+          "title": "Advisory: Spearphishing campaign targeting telecom providers",
+          "url": "https://example.org/advisory/2026-telecom-campaign",
+          "published_at": "2026-03-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "66b6ba78657af087",
+      "group": "Salt Typhoon",
+      "tactic": "persistence",
+      "technique": "T1053.005",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.8788,
+      "item_ids": [
+        "bbad8e192fe663be"
+      ],
+      "sources": [
+        "Example CERT"
+      ],
+      "examples": [
+        {
+          "title": "Advisory: Spearphishing campaign targeting telecom providers",
+          "url": "https://example.org/advisory/2026-telecom-campaign",
+          "published_at": "2026-03-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "fa653319c9151bbc",
+      "group": "Salt Typhoon",
+      "tactic": "execution",
+      "technique": "T1059.001",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.8788,
+      "item_ids": [
+        "bbad8e192fe663be"
+      ],
+      "sources": [
+        "Example CERT"
+      ],
+      "examples": [
+        {
+          "title": "Advisory: Spearphishing campaign targeting telecom providers",
+          "url": "https://example.org/advisory/2026-telecom-campaign",
+          "published_at": "2026-03-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "16a2d1a41df7da5f",
+      "group": "Salt Typhoon",
+      "tactic": "command_and_control",
+      "technique": "T1071.001",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.8788,
+      "item_ids": [
+        "bbad8e192fe663be"
+      ],
+      "sources": [
+        "Example CERT"
+      ],
+      "examples": [
+        {
+          "title": "Advisory: Spearphishing campaign targeting telecom providers",
+          "url": "https://example.org/advisory/2026-telecom-campaign",
+          "published_at": "2026-03-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "fec543be272df44f",
+      "group": "Salt Typhoon",
+      "tactic": "collection",
+      "technique": "T1074.001",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.8788,
+      "item_ids": [
+        "bbad8e192fe663be"
+      ],
+      "sources": [
+        "Example CERT"
+      ],
+      "examples": [
+        {
+          "title": "Advisory: Spearphishing campaign targeting telecom providers",
+          "url": "https://example.org/advisory/2026-telecom-campaign",
+          "published_at": "2026-03-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "bfa34723201b7fd6",
+      "group": "Salt Typhoon",
+      "tactic": "initial_access",
+      "technique": "T1566.001",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.8788,
+      "item_ids": [
+        "bbad8e192fe663be"
+      ],
+      "sources": [
+        "Example CERT"
+      ],
+      "examples": [
+        {
+          "title": "Advisory: Spearphishing campaign targeting telecom providers",
+          "url": "https://example.org/advisory/2026-telecom-campaign",
+          "published_at": "2026-03-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "846a81ae7dd23800",
+      "group": "Salt Typhoon",
+      "tactic": "initial_access",
+      "technique": "T1566.002",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.8788,
+      "item_ids": [
+        "bbad8e192fe663be"
+      ],
+      "sources": [
+        "Example CERT"
+      ],
+      "examples": [
+        {
+          "title": "Advisory: Spearphishing campaign targeting telecom providers",
+          "url": "https://example.org/advisory/2026-telecom-campaign",
+          "published_at": "2026-03-10T08:30:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "e1011ff4938494aa",
+      "group": "Sandworm",
+      "tactic": "lateral_movement",
+      "technique": "T1021.001",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.7584,
+      "item_ids": [
+        "321b0c27874bd513"
+      ],
+      "sources": [
+        "Vendor Labs"
+      ],
+      "examples": [
+        {
+          "title": "Threat report: ICS-focused disruption activity",
+          "url": "https://example.org/report/ics-disruption",
+          "published_at": "2026-03-08T16:00:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "1d8ad505abc179d4",
+      "group": "Sandworm",
+      "tactic": "lateral_movement",
+      "technique": "T1021.002",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.7584,
+      "item_ids": [
+        "321b0c27874bd513"
+      ],
+      "sources": [
+        "Vendor Labs"
+      ],
+      "examples": [
+        {
+          "title": "Threat report: ICS-focused disruption activity",
+          "url": "https://example.org/report/ics-disruption",
+          "published_at": "2026-03-08T16:00:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "03ea025386f8450c",
+      "group": "Sandworm",
+      "tactic": "command_and_control",
+      "technique": "T1219",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.7584,
+      "item_ids": [
+        "321b0c27874bd513"
+      ],
+      "sources": [
+        "Vendor Labs"
+      ],
+      "examples": [
+        {
+          "title": "Threat report: ICS-focused disruption activity",
+          "url": "https://example.org/report/ics-disruption",
+          "published_at": "2026-03-08T16:00:00Z"
+        }
+      ]
+    },
+    {
+      "candidate_id": "74b12ec7e51c207c",
+      "group": "Sandworm",
+      "tactic": "impact",
+      "technique": "T1490",
+      "support_count": 1,
+      "source_count": 1,
+      "evidence_score": 0.7584,
+      "item_ids": [
+        "321b0c27874bd513"
+      ],
+      "sources": [
+        "Vendor Labs"
+      ],
+      "examples": [
+        {
+          "title": "Threat report: ICS-focused disruption activity",
+          "url": "https://example.org/report/ics-disruption",
+          "published_at": "2026-03-08T16:00:00Z"
+        }
+      ]
+    }
+  ]
+}
