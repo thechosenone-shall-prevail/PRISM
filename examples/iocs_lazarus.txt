@@ -1,0 +1,23 @@
+IP Addresses:
+185.220.101.45
+192.168.1.50
+10.0.0.25
+
+Domains:
+financial-analytics.com
+crypto-market-data.net
+secure-banking-portal.org
+
+File Hashes (MD5):
+d41d8cd98f00b204e9800998ecf8427e
+5d41402abc4b2a76b9719d911017c592
+7d793037a0760186574b0282f2f435e7
+
+File Hashes (SHA256):
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+fcde2b2edba56bf408601fb721fe9b5c338d10ee429ea04fae5511b68fbf8fb9
+
+CVEs:
+CVE-2024-1234
+CVE-2023-5678

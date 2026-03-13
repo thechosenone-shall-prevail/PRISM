@@ -1,0 +1,54 @@
+INCIDENT REPORT: Financial Institution Breach
+Date: March 10-31, 2026
+Target: Regional Bank - Financial Services Division
+
+EXECUTIVE SUMMARY:
+On March 10, 2026, our security operations center detected suspicious activity
+originating from the financial services division. Initial investigation revealed
+a sophisticated multi-stage attack targeting cryptocurrency wallet management
+systems and SWIFT transaction processing infrastructure.
+
+ATTACK TIMELINE:
+
+Week 1 (March 10-16):
+- Initial access via spearphishing email to finance department employees
+- Malicious Word document with embedded VBA macros
+- Subject line: "Q1 2026 Cryptocurrency Market Analysis Report"
+- Macro executed PowerShell payload upon document opening
+- PowerShell loader established persistence via registry Run keys
+- No immediate C2 communication observed (48-hour sleep period)
+
+Week 2 (March 17-23):
+- Loader activated and established HTTPS C2 channel
+- C2 domain: financial-analytics[.]com (masquerading as legitimate service)
+- Beacon interval: 4-6 hours with random jitter
+- Lateral movement observed via RDP to financial servers
+- Credential dumping detected: LSASS memory access by non-system process
+- Pass-the-hash technique used for privilege escalation
+
+Week 3 (March 24-31):
+- Attacker gained access to cryptocurrency wallet management system
+- Attempted access to SWIFT transaction terminals (blocked by network segmentation)
+- Data staging observed: 2.3GB of financial records compressed with 7-zip
+- Exfiltration to cloud storage service (OneDrive) over 5-day period
+- Small file sizes (50-100KB chunks) to evade DLP detection
+- Exfiltration occurred during business hours to blend with normal traffic
+
+TECHNICAL INDICATORS:
+- Long dwell time (3 weeks) before detection
+- Sophisticated evasion: business-hours only activity, low beacon frequency
+- Financial sector targeting with specific focus on cryptocurrency infrastructure
+- Use of legitimate cloud services for exfiltration
+- Professional operational security: no noisy tools, minimal forensic artifacts
+
+IMPACT ASSESSMENT:
+- Confidential financial records compromised
+- Cryptocurrency wallet credentials potentially exposed
+- No direct financial loss detected (exfiltration only, no fund transfer)
+- Estimated attacker dwell time: 21 days
+
+ANALYST NOTES:
+The sophistication level, financial targeting, cryptocurrency focus, and
+operational patterns are consistent with nation-state APT activity rather
+than common cybercrime. The long dwell time and careful operational security
+suggest intelligence collection or pre-positioning for future operations.

@@ -51,7 +51,7 @@ def _read_jsonl(path: Path) -> list[dict]:
 
 def migrate_apt_groups():
     """Migrate apt_profiles.json → apt_groups table."""
-    path = PROJECT_ROOT / "apt_profiles.json"
+    path = PROJECT_ROOT / "data" / "apt_profiles.json"
     data = _read_json(path)
     groups = data.get("apt_groups", [])
 
@@ -90,7 +90,7 @@ def migrate_apt_groups():
 
 def migrate_malware_families():
     """Migrate malware_family_db.json → malware_families table."""
-    path = PROJECT_ROOT / "malware_family_db.json"
+    path = PROJECT_ROOT / "data" / "malware_family_db.json"
     data = _read_json(path)
     families = data.get("families", [])
 
@@ -124,7 +124,7 @@ def migrate_malware_families():
 
 def migrate_emerging_clusters():
     """Migrate emerging_clusters.json → emerging_clusters table."""
-    path = PROJECT_ROOT / "emerging_clusters.json"
+    path = PROJECT_ROOT / "data" / "emerging_clusters.json"
     if not path.exists():
         print("\n[emerging_clusters] No file found, skipping.")
         return

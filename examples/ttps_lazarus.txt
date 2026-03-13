@@ -1,0 +1,21 @@
+T1566.001 - Spearphishing Attachment
+T1204.002 - User Execution: Malicious File
+T1059.005 - Visual Basic for Applications (VBA)
+T1059.001 - PowerShell
+T1547.001 - Registry Run Keys / Startup Folder
+T1497.003 - Time Based Evasion (48-hour sleep)
+T1071.001 - Application Layer Protocol: Web Protocols (HTTPS C2)
+T1573.001 - Encrypted Channel: Symmetric Cryptography
+T1036.005 - Masquerading: Match Legitimate Name or Location
+T1021.001 - Remote Desktop Protocol
+T1003.001 - OS Credential Dumping: LSASS Memory
+T1550.002 - Use Alternate Authentication Material: Pass the Hash
+T1078 - Valid Accounts
+T1083 - File and Directory Discovery
+T1082 - System Information Discovery
+T1560.001 - Archive Collected Data: Archive via Utility (7-zip)
+T1074.001 - Data Staged: Local Data Staging
+T1030 - Data Transfer Size Limits (50-100KB chunks)
+T1029 - Scheduled Transfer (business hours timing)
+T1567.002 - Exfiltration Over Web Service: Exfiltration to Cloud Storage
+T1041 - Exfiltration Over C2 Channel

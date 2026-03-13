@@ -7,12 +7,15 @@ GET  /api/intel/stats    — intel pipeline statistics
 """
 
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
+import httpx
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 import db
+
+_HTTPX_TIMEOUT = 15.0
 
 router = APIRouter()
 
@@ -151,9 +154,49 @@ async def sync_mitre_attack():
     Trigger a synchronization of MITRE ATT&CK techniques with APT profiles in Supabase.
     This pulls the latest mappings from the ATT&CK STIX data.
     """
+    import sys
+    from pathlib import Path as _P
+    sys.path.insert(0, str(_P(__file__).resolve().parent.parent.parent))
     import intel_pipeline
     try:
         res = intel_pipeline.sync_attack_to_profiles(to_supabase=True)
         return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"MITRE sync failed: {e}")
+
+
+# ---------------------------------------------------------------------------
+# Proxy endpoints for external threat intel feeds (avoids CORS issues)
+# ---------------------------------------------------------------------------
+
+@router.get("/intel/feed/cisa-kev")
+async def proxy_cisa_kev():
+    """Proxy the CISA KEV JSON feed to bypass browser CORS restrictions."""
+    url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    async with httpx.AsyncClient(timeout=_HTTPX_TIMEOUT, follow_redirects=True) as client:
+        try:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            return resp.json()
+        except Exception:
+            raise HTTPException(status_code=502, detail="Failed to fetch CISA KEV feed")
+
+
+@router.get("/intel/feed/nvd")
+async def proxy_nvd(days: int = Query(7, ge=1, le=30)):
+    """Proxy the NVD critical CVEs feed."""
+    now = datetime.now(timezone.utc)
+    start = now - timedelta(days=days)
+    url = (
+        "https://services.nvd.nist.gov/rest/json/cves/2.0"
+        f"?pubStartDate={start.strftime('%Y-%m-%dT%H:%M:%S')}.000"
+        f"&pubEndDate={now.strftime('%Y-%m-%dT%H:%M:%S')}.000"
+        "&resultsPerPage=10&cvssV3Severity=CRITICAL"
+    )
+    async with httpx.AsyncClient(timeout=_HTTPX_TIMEOUT, follow_redirects=True) as client:
+        try:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            return resp.json()
+        except Exception:
+            raise HTTPException(status_code=502, detail="Failed to fetch NVD feed")

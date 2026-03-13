@@ -92,15 +92,15 @@ def main():
     print("\nTraining XGBoost classifier...")
 
     model = xgb.XGBClassifier(
-        n_estimators=300,
-        max_depth=8,
-        learning_rate=0.1,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        min_child_weight=3,
-        gamma=0.1,
-        reg_alpha=0.1,
-        reg_lambda=1.0,
+        n_estimators=250,
+        max_depth=5,
+        learning_rate=0.08,
+        subsample=0.75,
+        colsample_bytree=0.7,
+        min_child_weight=5,
+        gamma=0.3,
+        reg_alpha=0.5,
+        reg_lambda=2.0,
         objective="multi:softprob",
         num_class=len(class_names),
         eval_metric="mlogloss",
@@ -207,11 +207,11 @@ def main():
             for idx in top_indices
         ],
         "hyperparameters": {
-            "n_estimators": 300,
-            "max_depth": 8,
-            "learning_rate": 0.1,
-            "subsample": 0.8,
-            "colsample_bytree": 0.8,
+            "n_estimators": 250,
+            "max_depth": 5,
+            "learning_rate": 0.08,
+            "subsample": 0.75,
+            "colsample_bytree": 0.7,
         },
     }
 

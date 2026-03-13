@@ -11,7 +11,12 @@ import collections
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
-import streamlit as st
+
+try:
+    import streamlit as st
+    _has_streamlit = True
+except ImportError:
+    _has_streamlit = False
 
 from cluster_memory import upsert_emerging_cluster
 import vt_client
@@ -20,20 +25,25 @@ import vt_client
 
 _BASE_DIR = Path(__file__).resolve().parent
 _PROFILE_CANDIDATES = (
+    _BASE_DIR / "data" / "apt_profiles.json",
     _BASE_DIR / "apt_profiles.json",
-    _BASE_DIR.parent / "data" / "apt_profiles.json",
 )
 DATA_PATH = next(
     (path for path in _PROFILE_CANDIDATES if path.exists()),
     _PROFILE_CANDIDATES[0],
 )
 _MALWARE_DB_CANDIDATES = (
+    _BASE_DIR / "data" / "malware_family_db.json",
     _BASE_DIR / "malware_family_db.json",
-    _BASE_DIR.parent / "data" / "malware_family_db.json",
 )
 
 
-@st.cache_data
+def _cache_data(fn):
+    """Apply st.cache_data only when streamlit is available."""
+    return st.cache_data(fn) if _has_streamlit else fn
+
+
+@_cache_data
 def load_profiles(data_path: Optional[Path] = None) -> dict:
     profile_path = Path(data_path) if data_path else DATA_PATH
     if not profile_path.exists():
@@ -1307,7 +1317,7 @@ def get_technique_name(technique_id: str, descriptions: dict) -> str:
 
 # -- Malware Retracing -------------------------------------------------------
 
-@st.cache_data
+@_cache_data
 def load_malware_family_db(data_path: Optional[Path] = None) -> dict:
     db_path = (
         Path(data_path)
@@ -1325,10 +1335,14 @@ def load_malware_family_db(data_path: Optional[Path] = None) -> dict:
 
 
 def _extract_ascii_strings(file_bytes: bytes, min_len: int = 5, limit: int = 600) -> list[str]:
+    # Cap scan to first 10MB — meaningful strings (imports, URLs, C2) are
+    # near the start; scanning all 71MB+ wastes minutes on resource data.
+    MAX_SCAN = 10 * 1024 * 1024
+    scan_bytes = file_bytes[:MAX_SCAN] if len(file_bytes) > MAX_SCAN else file_bytes
     pattern = rb"[\x20-\x7E]{" + str(min_len).encode("ascii") + rb",}"
     strings: list[str] = [
         s.decode("utf-8", errors="ignore").strip()
-        for s in re.findall(pattern, file_bytes)
+        for s in re.findall(pattern, scan_bytes)
     ]
     filtered: list[str] = [s for s in strings if s]
     return filtered[:limit]  # type: ignore[index]
@@ -1338,8 +1352,11 @@ def _calculate_entropy(data: bytes) -> float:
     """Calculate Shannon entropy of a byte string."""
     if not data:
         return 0.0
-    counter = collections.Counter(data)
-    len_data = len(data)
+    # Cap to first 1MB for performance — entropy of large files is
+    # well-approximated by the first chunk.
+    sample = data[:1024 * 1024] if len(data) > 1024 * 1024 else data
+    counter = collections.Counter(sample)
+    len_data = len(sample)
     entropy = -sum((count / len_data) * math.log2(count / len_data) for count in counter.values())
     return round(entropy, 4)
 
@@ -1587,7 +1604,13 @@ def run_malware_retracing(
 
     vt_report = None
     if normalized_hash:
-        vt_report = vt_client.get_file_report(normalized_hash)
+        try:
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as pool:
+                future = pool.submit(vt_client.get_file_report, normalized_hash)
+                vt_report = future.result(timeout=12)
+        except Exception:
+            vt_report = None
 
     ranked = []
     for family in family_db.get("families", []):

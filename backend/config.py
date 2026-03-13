@@ -20,6 +20,9 @@ SUPABASE_SERVICE_KEY: str = os.getenv("SUPABASE_SERVICE_KEY", "")
 ML_MODEL_PATH: str = os.getenv("ML_MODEL_PATH", str(_BACKEND_DIR.parent / "ml" / "models" / "PRISM_model.pkl"))
 FEATURE_SCHEMA_PATH: str = os.getenv("FEATURE_SCHEMA_PATH", str(_BACKEND_DIR.parent / "ml" / "models" / "feature_schema.json"))
 
+# DeepSeek LLM
+DEEPSEEK_API_KEY: str = os.getenv("DEEPSEEK_API_KEY", "")
+
 # Engine
 RULE_ENGINE_ENABLED: bool = os.getenv("RULE_ENGINE_ENABLED", "false").lower() == "true"
 

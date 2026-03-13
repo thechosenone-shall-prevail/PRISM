@@ -1,222 +1,228 @@
 {
   "model_version": "v1.0.0",
   "model_type": "xgboost",
-  "accuracy": 0.9992,
-  "macro_f1": 0.9992,
-  "weighted_f1": 0.9992,
-  "cv_f1_mean": 0.9997,
-  "cv_f1_std": 0.0006,
-  "train_samples": 5200,
-  "test_samples": 1300,
+  "accuracy": 0.8557,
+  "macro_f1": 0.8557,
+  "weighted_f1": 0.8557,
+  "cv_f1_mean": 0.8673,
+  "cv_f1_std": 0.005,
+  "train_samples": 5600,
+  "test_samples": 1400,
   "feature_count": 407,
-  "class_count": 13,
+  "class_count": 14,
   "per_class_metrics": {
     "APT28": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.8298,
+      "recall": 0.78,
+      "f1": 0.8041,
       "support": 100
     },
     "APT29": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.8763,
+      "recall": 0.85,
+      "f1": 0.8629,
       "support": 100
     },
     "APT35": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.8526,
+      "recall": 0.81,
+      "f1": 0.8308,
       "support": 100
     },
     "APT41": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.8936,
+      "recall": 0.84,
+      "f1": 0.866,
       "support": 100
     },
     "Kimsuky": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.883,
+      "recall": 0.83,
+      "f1": 0.8557,
       "support": 100
     },
     "Lazarus Group": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.9121,
+      "recall": 0.83,
+      "f1": 0.8691,
       "support": 100
     },
     "MuddyWater": {
-      "precision": 1.0,
-      "recall": 0.99,
-      "f1": 0.995,
+      "precision": 0.835,
+      "recall": 0.86,
+      "f1": 0.8473,
       "support": 100
     },
     "OilRig": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.7767,
+      "recall": 0.8,
+      "f1": 0.7882,
       "support": 100
     },
     "Salt Typhoon": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.8636,
+      "recall": 0.95,
+      "f1": 0.9048,
       "support": 100
     },
     "Sandworm": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.9091,
+      "recall": 0.9,
+      "f1": 0.9045,
       "support": 100
     },
     "Transparent Tribe": {
-      "precision": 0.9901,
-      "recall": 1.0,
-      "f1": 0.995,
+      "precision": 0.807,
+      "recall": 0.92,
+      "f1": 0.8598,
       "support": 100
     },
     "Turla": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.7364,
+      "recall": 0.81,
+      "f1": 0.7714,
+      "support": 100
+    },
+    "Unknown": {
+      "precision": 0.9238,
+      "recall": 0.97,
+      "f1": 0.9463,
       "support": 100
     },
     "Volt Typhoon": {
-      "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
+      "precision": 0.9121,
+      "recall": 0.83,
+      "f1": 0.8691,
       "support": 100
     }
   },
   "top_features": [
     {
-      "feature": "ttp_T1137.004",
-      "importance": 0.0248
+      "feature": "ttp_T1123",
+      "importance": 0.0343
     },
     {
-      "feature": "ttp_T1491.002",
-      "importance": 0.022
-    },
-    {
-      "feature": "ttp_T1218.010",
-      "importance": 0.021
-    },
-    {
-      "feature": "ttp_T1615",
-      "importance": 0.0189
-    },
-    {
-      "feature": "ttp_T1574.013",
-      "importance": 0.0188
-    },
-    {
-      "feature": "ttp_T1496.001",
-      "importance": 0.018
+      "feature": "ttp_T1550.001",
+      "importance": 0.0273
     },
     {
       "feature": "ttp_T1547.004",
-      "importance": 0.0174
+      "importance": 0.0215
     },
     {
-      "feature": "ttp_T1580",
-      "importance": 0.0169
+      "feature": "ttp_T1562.013",
+      "importance": 0.0199
     },
     {
-      "feature": "ttp_T1657",
-      "importance": 0.0138
+      "feature": "ttp_T1567.001",
+      "importance": 0.0186
     },
     {
-      "feature": "ttp_T1110.002",
-      "importance": 0.0131
+      "feature": "ttp_T1136.003",
+      "importance": 0.0177
     },
     {
-      "feature": "ttp_T1590",
-      "importance": 0.0129
-    },
-    {
-      "feature": "ttp_T1583.003",
-      "importance": 0.0127
-    },
-    {
-      "feature": "ttp_T1592",
-      "importance": 0.0127
-    },
-    {
-      "feature": "ttp_T1568.002",
-      "importance": 0.0123
-    },
-    {
-      "feature": "ttp_T1036.006",
-      "importance": 0.0118
-    },
-    {
-      "feature": "ttp_T1006",
-      "importance": 0.0114
-    },
-    {
-      "feature": "ttp_T1036.010",
-      "importance": 0.0112
-    },
-    {
-      "feature": "ttp_T1218.003",
-      "importance": 0.0112
-    },
-    {
-      "feature": "ctx_dissident",
-      "importance": 0.011
-    },
-    {
-      "feature": "ttp_T1016.002",
-      "importance": 0.0106
-    },
-    {
-      "feature": "ttp_T1070.007",
-      "importance": 0.0106
-    },
-    {
-      "feature": "ttp_T1557.001",
-      "importance": 0.0105
+      "feature": "ttp_T1565.002",
+      "importance": 0.0175
     },
     {
       "feature": "ttp_T1556.002",
-      "importance": 0.0105
+      "importance": 0.0151
     },
     {
-      "feature": "ttp_T1211",
-      "importance": 0.0105
+      "feature": "ttp_T1006",
+      "importance": 0.0137
     },
     {
-      "feature": "ttp_T1027.003",
-      "importance": 0.0102
+      "feature": "ttp_T1202",
+      "importance": 0.0134
     },
     {
-      "feature": "ttp_T1651",
-      "importance": 0.0102
+      "feature": "ttp_T1654",
+      "importance": 0.0123
+    },
+    {
+      "feature": "ttp_T1588.004",
+      "importance": 0.0122
+    },
+    {
+      "feature": "ttp_T1585",
+      "importance": 0.0115
     },
     {
       "feature": "ttp_T1070.002",
-      "importance": 0.0098
+      "importance": 0.0113
     },
     {
-      "feature": "ttp_T1074.002",
-      "importance": 0.0098
+      "feature": "ttp_T1036.006",
+      "importance": 0.0113
     },
     {
-      "feature": "ttp_T1078.004",
-      "importance": 0.0098
+      "feature": "ttp_T1480.001",
+      "importance": 0.0112
+    },
+    {
+      "feature": "ttp_T1137.004",
+      "importance": 0.0112
+    },
+    {
+      "feature": "ttp_T1586.003",
+      "importance": 0.0109
+    },
+    {
+      "feature": "ttp_T1016.002",
+      "importance": 0.0109
     },
     {
       "feature": "ttp_T1176.001",
-      "importance": 0.0096
+      "importance": 0.0109
+    },
+    {
+      "feature": "ttp_T1591.002",
+      "importance": 0.0104
+    },
+    {
+      "feature": "ttp_T1218.007",
+      "importance": 0.0103
+    },
+    {
+      "feature": "ttp_T1564.012",
+      "importance": 0.0101
+    },
+    {
+      "feature": "ttp_T1098.004",
+      "importance": 0.0098
+    },
+    {
+      "feature": "ttp_T1078.001",
+      "importance": 0.0097
+    },
+    {
+      "feature": "ttp_T1213.003",
+      "importance": 0.0095
+    },
+    {
+      "feature": "ttp_T1553.006",
+      "importance": 0.0094
+    },
+    {
+      "feature": "ttp_T1587.004",
+      "importance": 0.0093
+    },
+    {
+      "feature": "ttp_T1137.001",
+      "importance": 0.0086
+    },
+    {
+      "feature": "ttp_T1583.003",
+      "importance": 0.0081
     }
   ],
   "hyperparameters": {
-    "n_estimators": 300,
-    "max_depth": 8,
-    "learning_rate": 0.1,
-    "subsample": 0.8,
-    "colsample_bytree": 0.8
+    "n_estimators": 250,
+    "max_depth": 5,
+    "learning_rate": 0.08,
+    "subsample": 0.75,
+    "colsample_bytree": 0.7
   }
 }

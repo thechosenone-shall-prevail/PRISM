@@ -24,7 +24,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from demo_scenario import DEMO_SCENARIOS
 from engine import extract_ttps_from_text, load_profiles, run_attribution
 
 ROOT = Path(__file__).resolve().parent
@@ -34,7 +33,7 @@ QUEUE_FILE = INTEL_DIR / "raw_queue.jsonl"
 CANDIDATES_FILE = INTEL_DIR / "candidate_updates.json"
 REVIEW_FILE = INTEL_DIR / "review_sheet.json"
 CHANGELOG_FILE = INTEL_DIR / "change_log.jsonl"
-PROFILES_FILE = ROOT / "apt_profiles.json"
+PROFILES_FILE = ROOT / "data" / "apt_profiles.json"
 ATTACK_CACHE_FILE = INTEL_DIR / "attack_stix_cache.json"
 
 SOURCE_TIER_WEIGHTS = {
@@ -1047,3 +1046,96 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Campaign Correlation for Malware Attribution
+# ═══════════════════════════════════════════════════════════════════════════
+
+def correlate_with_campaigns(
+    ttps: list[str],
+    malware_family: str | None = None,
+    iocs: dict[str, Any] | None = None
+) -> list[dict[str, Any]]:
+    """
+    Correlate malware indicators with known APT campaigns.
+    
+    Args:
+        ttps: List of MITRE technique IDs
+        malware_family: Identified malware family name
+        iocs: Dict with hashes, imphash, etc.
+    
+    Returns:
+        List of matching campaigns with confidence scores
+    """
+    matches = []
+    
+    # Load APT profiles
+    try:
+        profiles = load_profiles()
+    except Exception:
+        return []
+    
+    # Known campaign signatures (simplified - in production, load from threat intel DB)
+    CAMPAIGN_SIGNATURES = {
+        "Operation Dream Job": {
+            "apt_group": "Lazarus Group",
+            "ttps": ["T1566.001", "T1059.001", "T1055", "T1003.001"],
+            "malware_families": ["manuscrypt", "fallchill"],
+            "timeframe": "2020-2024"
+        },
+        "SolarWinds Supply Chain": {
+            "apt_group": "APT29",
+            "ttps": ["T1195.002", "T1071.001", "T1027", "T1078"],
+            "malware_families": ["sunburst", "teardrop"],
+            "timeframe": "2020"
+        },
+        "NotPetya Wiper": {
+            "apt_group": "Sandworm",
+            "ttps": ["T1486", "T1490", "T1021.002", "T1003.001"],
+            "malware_families": ["notpetya", "industroyer"],
+            "timeframe": "2017"
+        },
+        "APT28 Credential Harvesting": {
+            "apt_group": "APT28",
+            "ttps": ["T1566.002", "T1003.001", "T1078", "T1071.001"],
+            "malware_families": ["x-agent", "sofacy"],
+            "timeframe": "2015-2024"
+        }
+    }
+    
+    # Score each campaign
+    for campaign_name, campaign_data in CAMPAIGN_SIGNATURES.items():
+        score = 0.0
+        matched_indicators = []
+        
+        # TTP overlap
+        campaign_ttps = set(campaign_data["ttps"])
+        input_ttps = set(ttps)
+        ttp_overlap = len(campaign_ttps & input_ttps)
+        if ttp_overlap > 0:
+            ttp_score = ttp_overlap / len(campaign_ttps)
+            score += ttp_score * 0.6
+            matched_indicators.append(f"{ttp_overlap} TTPs matched")
+        
+        # Malware family match
+        if malware_family:
+            family_lower = malware_family.lower()
+            if any(fam in family_lower for fam in campaign_data["malware_families"]):
+                score += 0.4
+                matched_indicators.append(f"Malware family: {malware_family}")
+        
+        # Only include campaigns with meaningful matches
+        if score > 0.2:
+            matches.append({
+                "campaign_name": campaign_name,
+                "apt_group": campaign_data["apt_group"],
+                "confidence": round(score * 100, 1),
+                "matched_indicators": matched_indicators,
+                "timeframe": campaign_data["timeframe"]
+            })
+    
+    # Sort by confidence
+    matches.sort(key=lambda x: x["confidence"], reverse=True)
+    
+    return matches

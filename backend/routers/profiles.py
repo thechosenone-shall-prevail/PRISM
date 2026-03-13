@@ -58,3 +58,13 @@ async def list_families():
             for f in families
         ]
     }
+
+
+@router.get("/families/{name}")
+async def get_family(name: str):
+    """Get a single malware family by name with full intelligence."""
+    families = db.get_all_families()
+    for f in families:
+        if f.get("family", "").lower() == name.lower():
+            return f
+    raise HTTPException(status_code=404, detail=f"Malware family '{name}' not found")

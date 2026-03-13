@@ -1,0 +1,41 @@
+Event ID 1: Process Create
+  UtcTime: 2026-03-10 14:23:15.234
+  ProcessGuid: {A23D45E6-1234-5678-90AB-CDEF12345678}
+  ProcessId: 4532
+  Image: C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe
+  CommandLine: powershell.exe -WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -enc JABzAD0ATgBlAHcALQBPAGIAagBlAGMAdAAgAEkATwAuAE0A
+  ParentImage: C:\Program Files\Microsoft Office\Office16\WINWORD.EXE
+  ParentCommandLine: "C:\Program Files\Microsoft Office\Office16\WINWORD.EXE" /n "C:\Users\jsmith\Downloads\Q1_Crypto_Report.docm"
+
+Event ID 13: Registry Value Set
+  UtcTime: 2026-03-10 14:23:18.456
+  TargetObject: HKCU\Software\Microsoft\Windows\CurrentVersion\Run\WindowsUpdate
+  Details: C:\Users\jsmith\AppData\Local\Temp\update.exe
+
+Event ID 3: Network Connection
+  UtcTime: 2026-03-12 09:15:42.123
+  ProcessId: 2344
+  Image: C:\Users\jsmith\AppData\Local\Temp\update.exe
+  Protocol: tcp
+  SourceIp: 192.168.1.50
+  DestinationIp: 185.220.101.45
+  DestinationPort: 443
+
+Event ID 10: Process Access
+  UtcTime: 2026-03-18 11:34:22.789
+  SourceImage: C:\Windows\Temp\svchost.exe
+  TargetImage: C:\Windows\System32\lsass.exe
+  GrantedAccess: 0x1010
+  CallTrace: C:\Windows\SYSTEM32\ntdll.dll+9d4c4|C:\Windows\System32\KERNELBASE.dll+2c13e
+
+Event ID 1: Process Create
+  UtcTime: 2026-03-18 15:22:11.456
+  Image: C:\Windows\System32\mstsc.exe
+  CommandLine: mstsc.exe /v:192.168.1.75
+  ParentImage: C:\Windows\explorer.exe
+
+Event ID 11: File Create
+  UtcTime: 2026-03-25 10:45:33.234
+  Image: C:\Program Files\7-Zip\7z.exe
+  TargetFilename: C:\Users\jsmith\AppData\Local\Temp\financial_data.7z
+  CreationUtcTime: 2026-03-25 10:45:33.234

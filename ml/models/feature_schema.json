@@ -423,9 +423,10 @@
     "Sandworm",
     "Transparent Tribe",
     "Turla",
+    "Unknown",
     "Volt Typhoon"
   ],
-  "class_count": 13,
+  "class_count": 14,
   "technique_features": [
     "ttp_T1001.001",
     "ttp_T1001.003",
@@ -840,8 +841,8 @@
     "export_count"
   ],
   "generation_config": {
-    "samples_per_group": 500,
-    "unknown_samples": 0,
-    "total_samples": 6500
+    "samples_per_group": 400,
+    "unknown_samples": 500,
+    "total_samples": 7000
   }
 }

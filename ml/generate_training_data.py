@@ -23,12 +23,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "backend"))
 
 OUTPUT_DIR = Path(__file__).resolve().parent / "data"
-PROFILES_PATH = PROJECT_ROOT / "apt_profiles.json"
+PROFILES_PATH = PROJECT_ROOT / "data" / "apt_profiles.json"
 
 # How many synthetic samples per APT group
-SAMPLES_PER_GROUP = 500
+SAMPLES_PER_GROUP = 400
+# Sparse observation samples (1-2 TTPs) per group
+SPARSE_PER_GROUP = 100
 # Additional "unknown" / noise samples
-UNKNOWN_SAMPLES = 0
+UNKNOWN_SAMPLES = 500
 
 
 def load_profiles() -> dict:
@@ -147,29 +149,67 @@ def generate_sample_for_group(
     return feature
 
 
+def generate_sparse_sample_for_group(
+    group: dict,
+    all_techniques: list[str],
+) -> dict[str, Any]:
+    """Generate a sparse observation (1-2 TTPs) for an APT group.
+    Teaches the model that sparse input != high confidence."""
+    group_name = group["name"]
+    group_techs: list[str] = []
+    for tactic, techs in group.get("ttps", {}).items():
+        group_techs.extend(techs)
+
+    n_sample = random.randint(1, 2)
+    sampled_techs = set(random.sample(group_techs, min(n_sample, len(group_techs))))
+
+    # Context: sometimes one signal, usually none
+    group_contexts = GROUP_CONTEXT_MAP.get(group_name, [])
+    sampled_contexts: set[str] = set()
+    if random.random() < 0.3 and group_contexts:
+        sampled_contexts.add(random.choice(group_contexts))
+
+    feature: dict[str, Any] = {}
+    for tech in all_techniques:
+        feature[f"ttp_{tech}"] = 1 if tech in sampled_techs else 0
+    for ctx in CONTEXT_SIGNALS:
+        feature[f"ctx_{ctx.replace(' ', '_')}"] = 1 if ctx in sampled_contexts else 0
+
+    feature["technique_count"] = len(sampled_techs)
+    feature["context_count"] = len(sampled_contexts)
+    feature["tactic_coverage"] = 1
+    feature["overall_entropy"] = random.uniform(4.0, 7.8)
+    feature["export_count"] = random.randint(0, 80)
+    feature["label"] = group_name
+    return feature
+
+
 def generate_unknown_sample(all_techniques: list[str]) -> dict[str, Any]:
     """Generate a sample that doesn't cleanly map to any APT group (noise/unknown)."""
-    # Random selection of 3-12 techniques
-    n = random.randint(3, 12)
-    sampled = set(random.sample(all_techniques, min(n, len(all_techniques))))
-    
+    # Sometimes truly empty (0-1 TTPs), sometimes a random mix
+    if random.random() < 0.3:
+        n = random.randint(0, 1)
+    else:
+        n = random.randint(2, 8)
+    sampled = set(random.sample(all_techniques, min(n, len(all_techniques)))) if n > 0 else set()
+
     # Random contexts
-    n_ctx = random.randint(0, 3)
+    n_ctx = random.randint(0, 2)
     sampled_contexts = set(random.sample(CONTEXT_SIGNALS, n_ctx)) if n_ctx > 0 else set()
-    
+
     feature: dict[str, Any] = {}
     for tech in all_techniques:
         feature[f"ttp_{tech}"] = 1 if tech in sampled else 0
     for ctx in CONTEXT_SIGNALS:
         feature[f"ctx_{ctx.replace(' ', '_')}"] = 1 if ctx in sampled_contexts else 0
-    
+
     feature["technique_count"] = len(sampled)
     feature["context_count"] = len(sampled_contexts)
-    feature["tactic_coverage"] = random.randint(1, 4)
-    feature["overall_entropy"] = random.uniform(3.0, 6.0)
+    feature["tactic_coverage"] = random.randint(0, min(3, n))
+    feature["overall_entropy"] = random.uniform(3.0, 7.0)
     feature["export_count"] = random.randint(0, 50)
     feature["label"] = "Unknown"
-    
+
     return feature
 
 
@@ -185,7 +225,7 @@ def main():
     print(f"APT Groups: {len(groups)}")
     print(f"Unique Techniques: {len(all_techniques)}")
     print(f"Context Signals: {len(CONTEXT_SIGNALS)}")
-    print(f"Samples per group: {SAMPLES_PER_GROUP}")
+    print(f"Samples per group: {SAMPLES_PER_GROUP} full + {SPARSE_PER_GROUP} sparse")
     print(f"Unknown samples: {UNKNOWN_SAMPLES}")
     print()
     
@@ -196,7 +236,10 @@ def main():
         for i in range(SAMPLES_PER_GROUP):
             sample = generate_sample_for_group(group, all_techniques, i)
             all_samples.append(sample)
-        print(f"  ✓ {group['name']}: {SAMPLES_PER_GROUP} samples")
+        for i in range(SPARSE_PER_GROUP):
+            sample = generate_sparse_sample_for_group(group, all_techniques)
+            all_samples.append(sample)
+        print(f"  ✓ {group['name']}: {SAMPLES_PER_GROUP} full + {SPARSE_PER_GROUP} sparse")
     
     for i in range(UNKNOWN_SAMPLES):
         all_samples.append(generate_unknown_sample(all_techniques))

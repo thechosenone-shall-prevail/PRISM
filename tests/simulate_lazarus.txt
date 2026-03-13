@@ -1,0 +1,8 @@
+Financial theft operation targeting cryptocurrency exchange and swift network.
+Initial access via spearphishing with a malicious link.
+Execution via powershell and scheduled task.
+Credential access: mimikatz used to dump lsass memory.
+Defense evasion: obfuscated encoded payload and timestomp.
+Command and control: https c2 beacon interval every 3 hours.
+Exfil: data exfil over c2.
+Impact: wiper malware deployed to cover tracks.

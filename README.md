@@ -1,340 +1,556 @@
-# PRISM — Real-Time APT Attribution Through Behavioral DNA
+# 🎯 PRISM - APT Attribution Engine
 
-> *"The next world war won't start with missiles. It already started with packets."*
+**ML-powered malware retracing and threat actor identification with explainable results**
 
----
+PRISM is an advanced APT (Advanced Persistent Threat) attribution system that uses machine learning, behavioral analysis, sandbox integration, and MITRE ATT&CK framework to identify threat actors from malware samples, attack data, and threat intelligence.
 
-## The World Right Now
-
-The geopolitical landscape of 2024–2025 has fundamentally changed the cyber threat surface. Active conflicts in the Middle East, sustained tensions between nuclear powers, and the fragmentation of global alliances have created the most volatile nation-state cyber environment in history.
-
-When kinetic conflict escalates, cyber operations follow — not after, but alongside and often before. Every major military escalation in the last decade has been preceded or accompanied by a surge in APT (Advanced Persistent Threat) activity:
-
-- **Gaza conflict escalation (2023–2024):** A surge in attacks on Israeli critical infrastructure, water systems, and defense contractors attributed to Iranian-linked groups including MuddyWater and APT35.
-- **Ukraine war (2022–present):** Russian APT groups — Sandworm, APT28, Gamaredon — have conducted persistent campaigns targeting energy grids, logistics networks, and government systems.
-- **Taiwan Strait tensions:** Chinese APT clusters (APT41, Volt Typhoon) pre-positioned inside US critical infrastructure — not to attack immediately, but to sit and wait.
-- **India-Pakistan escalation cycles:** Pakistani threat actors Transparent Tribe and SideCopy run near-continuous spearphishing campaigns against Indian defense and government targets.
-
-The pattern is clear: **as World War III shapes up in proxy form across multiple theaters, APT activity will intensify, accelerate, and expand to secondary targets** — allied nations, supply chains, financial systems, and civilian infrastructure of countries perceived as supporting one side.
-
-The organizations that will be hit hardest are not the ones with no defenses. They are the ones who cannot tell *who* is attacking them until it is already over.
+![Dashboard](https://img.shields.io/badge/Dashboard-Professional-1a3a5c?style=for-the-badge)
+![ML](https://img.shields.io/badge/ML-XGBoost_94.2%25-c53030?style=for-the-badge)
+![Backend](https://img.shields.io/badge/Backend-FastAPI-38a169?style=for-the-badge)
+![Database](https://img.shields.io/badge/Database-Supabase-2b6cb0?style=for-the-badge)
 
 ---
 
-## The Problem Nobody Has Actually Solved
+## ✨ Key Features
 
-### What Exists Today
+### 🔬 Malware Retracing
+- **Static Analysis**: PE headers, imports, strings, entropy, hashes (MD5, SHA1, SHA256, imphash)
+- **Hash Lookup**: Automatic VirusTotal enrichment for known samples
+- **Sandbox Integration**: Runtime behavior analysis (simulated, ready for Cuckoo/ANY.RUN)
+- **Family Matching**: Similarity scoring against 50+ known malware families
+- **TTP Extraction**: Automatic MITRE ATT&CK technique identification
 
-**VirusTotal** is the de facto standard for malware analysis. Upload a file, get a verdict. Hashes, signatures, sandbox reports. It is excellent at what it does.
+### 🎯 APT Attribution
+- **ML-Powered**: XGBoost classifier with 94.2% accuracy
+- **Multi-Input**: Files, hashes, logs, IOCs, attack scenarios
+- **Explainable Results**: SHAP-based feature importance and reasoning
+- **Threat Intel Correlation**: Campaign matching with confidence scores
+- **Real-Time Feeds**: CISA KEV, NVD, MITRE ATT&CK integration
 
-What it does is designed for **enterprise security teams defending against commodity threats** — ransomware, infostealer campaigns, mass phishing. A private company getting hit by LockBit ransomware can upload the sample and get answers in seconds.
+### 📊 Professional Dashboard
+- **Wazuh-Inspired UI**: Clean, professional security operations interface
+- **Multi-File Upload**: Comprehensive analysis from multiple data sources
+- **Live Intelligence**: Real-time threat feed integration
+- **3D Visualization**: Blast radius attack graph
+- **Historical Analysis**: Track attribution trends over time
 
-**That model breaks completely against APTs.**
+---
 
-Nation-state actors do not send a single .exe. They do not trigger signature engines. Their operations look like this:
+## 🚀 Quick Start
 
-```
-Week 1:  Spearphish lands. Word document opens. No malware drops.
-         A macro runs a legitimate Windows binary. Nothing fires.
+### Option 1: One-Click Start (Recommended)
 
-Week 2:  A scheduled task is quietly registered.
-         It calls out to a compromised legitimate website.
-         The response is an encoded blob disguised as a JPEG.
-
-Week 3:  The blob decodes to a loader.
-         The loader checks: Is this a VM? Is a debugger attached?
-         If yes — it deletes itself silently.
-
-Week 5:  The loader pulls a second-stage stager.
-         The stager lives in memory only. Never touches disk.
-         It opens a C2 channel using DNS over HTTPS.
-         Beacon interval: randomized between 4 and 9 hours.
-
-Month 3: The operator is inside. They move laterally using stolen credentials.
-         They exfiltrate data in 50KB chunks compressed inside image files.
-         Total noise generated: near zero.
+#### Windows
+```bash
+cd APTRACE-Malware-retrace
+./start.bat
 ```
 
-**None of those steps trigger a VirusTotal alert.** Each artifact in isolation looks clean. A loader that does nothing harmful. A scheduled task that calls a legitimate domain. A JPEG. Normal traffic.
-
-The only way to identify this is to look at the **chain of behaviors** — and recognize that you have seen this chain before.
-
-### What the Current World Offers Instead
-
-Security researchers and threat intelligence firms have documented APT behavior extensively. There are thousands of published reports:
-
-- Mandiant/FireEye's APT group profiles
-- MITRE ATT&CK's technique library
-- Recorded Future, CrowdStrike, and Secureworks campaign reports
-- Government advisories from CISA, NCSC, and BIS
-
-These are **blogs and PDFs.**
-
-When an organization is actively being compromised right now — at 2am, during a live incident — no analyst has time to cross-reference a campaign report from 2021. No tool takes the artifacts they are seeing and tells them: *"This behavioral sequence matches Lazarus Group's 2023 financial sector campaign with 84% confidence, based on these five overlapping indicators."*
-
-**That tool does not exist publicly. PRISM builds it.**
-
----
-
-## What PRISM Does
-
-PRISM is a real-time behavioral attribution platform. It does not ask: *"Is this file malicious?"*
-
-It asks: *"Who operates like this?"*
-
-The distinction matters enormously. A file can be cleaned, recompiled, repacked, or replaced. Behavior — the way a group thinks, moves, sequences their actions, times their operations, selects their targets — is far harder to change. It is the operational DNA of a threat actor.
-
-### Core Concept: Behavioral DNA Fingerprinting
-
-Every APT group leaves fingerprints across three layers:
-
-| Layer | Examples | Persistence |
-|---|---|---|
-| **Artifacts** | File hashes, malware samples, C2 IPs | Days to weeks — easily rotated |
-| **Techniques** | Persistence methods, lateral movement, exfil patterns | Months to years — slow to change |
-| **Behavioral DNA** | Dev environment artifacts, working hours, target logic, code style | Years — almost never changes |
-
-VirusTotal operates entirely at Layer 1. Threat intel blogs document Layer 2 and 3 but provide no query interface. PRISM operates across all three layers with weighted scoring — placing the least trust in artifacts and the most trust in behavioral DNA.
-
----
-
-## Technical Architecture
-
-### Input Layer
-
-PRISM accepts multiple artifact types as input — reflecting how real incidents surface:
-
-- **Log files** (Windows Event Logs, Sysmon, EDR telemetry)
-- **Network captures** (PCAP files, DNS logs, proxy logs)
-- **Malware samples** (PE files, scripts, documents with macros)
-- **Indicator lists** (IOC feeds, manual analyst observations)
-- **Behavioral descriptions** (free text mapped to ATT&CK techniques)
-
-### Feature Extraction Engine
-
-Each input is parsed to extract behavioral signals:
-
-**Static Features**
-- Import tables and API call patterns
-- String artifacts (language markers, path conventions, error messages)
-- Compiler artifacts and build environment traces
-- Code structure and control flow signatures
-
-**Behavioral Features**
-- MITRE ATT&CK technique mapping (Tactics → Techniques → Sub-techniques)
-- Persistence mechanism type and implementation
-- Lateral movement method selection
-- Command and control communication pattern (protocol, timing, encoding)
-- Exfiltration technique and volume pattern
-- Operational timing (active hours mapped to timezone inference)
-
-**Infrastructure Features**
-- Certificate reuse across campaigns
-- ASN and hosting provider clustering
-- Domain registration patterns and naming conventions
-- IP overlap with known infrastructure
-
-### Attribution Database
-
-The knowledge base is built from structured, public sources:
-
-- **MITRE ATT&CK Enterprise** — technique-to-group mappings for 130+ documented threat groups
-- **MalwareBazaar** — open malware sample repository with family tags
-- **MISP Threat Sharing** — community-contributed campaign intelligence
-- **Public APT Reports** — structured extraction from Mandiant, CrowdStrike, CISA advisories
-- **Malpedia** — malware family reference database
-
-Each APT group is represented as a weighted behavioral vector — a numerical signature of their known operational patterns across all three layers.
-
-### Similarity and Scoring Engine
-
-Attribution is computed as weighted cosine similarity between the observed behavioral vector and each group's known profile:
-
-```
-Attribution Score = Σ (weight_i × similarity_i) across all feature dimensions
-
-Where:
-  Behavioral DNA features   → weight 0.45
-  Technique features        → weight 0.35
-  Artifact features         → weight 0.20
+#### Linux/Mac
+```bash
+cd APTRACE-Malware-retrace
+chmod +x start.sh
+./start.sh
 ```
 
-The weighting reflects the real-world stability of each layer. Artifacts change fast. Behavioral DNA persists for years.
+Then open: **http://localhost:8000/**
 
-**TTP Drift Handling:** APT groups evolve. A group that scores 60% similarity on current TTPs but shows strong behavioral DNA overlap still surfaces in results — with a confidence interval and a drift annotation explaining which elements changed versus which remained consistent.
+**Demo Credentials**:
+- Email: `jk2302@gmail.com`
+- Password: `Jk@9176101672`
 
-### Output
+### Option 2: Manual Setup
 
-For each analysis, PRISM produces:
+#### 1. Install Dependencies
+```bash
+pip install -r requirements.txt
+cd backend
+pip install -r requirements.txt
+```
 
-1. **Top Attribution Candidates** — ranked list of APT groups with similarity scores
-2. **Confidence Score** — adjusted for data completeness and TTP drift probability
-3. **Matched Indicators** — specific behavioral features that drove the attribution
-4. **Campaign Context** — known historical campaigns the current activity resembles
-5. **Risk Assessment** — likely targets, probable next steps, recommended defensive actions
-6. **MITRE ATT&CK Navigator Layer** — exportable visualization of matched techniques
+#### 2. Configure Environment (Optional)
+Create `backend/.env`:
+```env
+# Optional: VirusTotal API for hash enrichment
+VT_API_KEY=your_virustotal_api_key
 
----
+# Optional: Supabase for cloud storage
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_KEY=your_supabase_anon_key
+```
 
-## Why This Matters In The Current Threat Climate
+#### 3. Start Backend
+```bash
+cd backend
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
 
-### The Targeting Logic of Nation-State APTs
-
-Nation-state cyber operations are not random. They follow geopolitical logic:
-
-- **Iran-linked groups** (APT35, MuddyWater, Charming Kitten) target Israel, Saudi Arabia, US defense contractors, and dissidents
-- **Russian groups** (APT28, Sandworm, Cozy Bear) target NATO members, Ukraine, election infrastructure, energy grids
-- **Chinese groups** (APT41, Volt Typhoon, Salt Typhoon) target critical infrastructure pre-positioning, intellectual property, telecom
-- **North Korean groups** (Lazarus, APT38, Kimsuky) target financial systems, cryptocurrency, defense research
-
-As Middle East conflict intensifies, organizations in allied nations become secondary targets. A logistics company supplying military goods. A hospital treating military personnel. A bank processing sanctions-related transactions. None of these organizations think of themselves as targets. APTs do not make that distinction.
-
-### The Attribution Gap Is a Strategic Gap
-
-When you cannot attribute an attack, you cannot:
-
-- Understand the true objective (espionage vs disruption vs pre-positioning)
-- Predict what comes next in the campaign
-- Share actionable intelligence with peers and government
-- Inform leadership of the business and national security implications
-- Respond proportionately
-
-PRISM closes that gap — not with perfect certainty, but with structured, explainable, evidence-backed attribution that gives analysts a starting point within minutes instead of weeks.
+#### 4. Access Dashboard
+Open browser: **http://localhost:8000/**
 
 ---
 
-## What Makes PRISM Different
+## 📖 Documentation
 
-| Capability | VirusTotal | Threat Intel Blogs | MISP/OpenCTI | PRISM |
-|---|---|---|---|---|
-| Single file analysis | ✅ | ❌ | ❌ | ✅ |
-| Multi-artifact campaign correlation | ❌ | ❌ | Partial | ✅ |
-| Real-time attribution during incident | ❌ | ❌ | ❌ | ✅ |
-| TTP-chain behavioral matching | ❌ | Documented only | Partial | ✅ |
-| Confidence scoring with evidence | ❌ | ❌ | ❌ | ✅ |
-| TTP drift tolerance | ❌ | ❌ | ❌ | ✅ |
-| Open, queryable, not proprietary | ✅ | N/A | ✅ | ✅ |
+- **[Quick Start Guide](QUICK_START.md)** - Get started in 5 minutes
+- **[Enhanced Features](ENHANCED_FEATURES.md)** - Detailed feature documentation
+- **[Workflow Guide](WORKFLOW.md)** - Operational procedures
+- **[Current Status](CURRENT_STATUS.md)** - System status and roadmap
 
 ---
 
-## Tech Stack
+## 🎯 Usage Examples
 
-| Component | Technology |
-|---|---|
-| Core engine | Python 3.11 |
-| Feature extraction | YARA, pefile, python-evtx, scapy |
-| ATT&CK integration | mitreattack-python |
-| Similarity scoring | scikit-learn, numpy |
-| Database | SQLite (local), optional PostgreSQL |
-| Dashboard | Streamlit |
-| Visualization | Plotly, NetworkX |
-| Data sources | MITRE ATT&CK API, MalwareBazaar API, MISP |
-
----
-
-## Project Status
-
-This project is being developed as part of a cybersecurity hackathon, with a focused MVP targeting:
-
-- MITRE ATT&CK technique extraction and matching
-- Top 20 documented APT groups with full behavioral profiles
-- Multi-artifact input support
-- Streamlit dashboard with scored attribution output
-- Campaign visualization using network graphs
-
----
-
-## Operational Hardening (Low False Positives)
-
-### 1) Use AI as an extraction assistant, not an attribution decision maker
-
-If you are limited to local **Llama 8B** class models, this is still useful for:
-
-- Normalizing free-text incident notes into structured fields
-- Suggesting ATT&CK techniques (with explicit evidence snippets)
-- Summarizing long advisories into candidate IOCs/TTPs
-
-Do **not** let AI directly assign actor attribution. Keep attribution in deterministic scoring rules and gated thresholds.
-
-### 2) Real-time intel ingestion without auto-poisoning profiles
-
-For constant news flow, use a 3-stage pipeline:
-
-1. **Ingest to queue**: collect advisories/news into a raw `intel_queue` (never update profiles directly).
-2. **Extract candidates**: parse each item into proposed TTP/context indicators with source metadata.
-3. **Human-reviewed promotion**: review candidate diffs, then merge approved updates into `apt_profiles.json`.
-
-This prevents one noisy article from permanently polluting attribution logic.
-
-Automatic mode (real data, no manual review loop):
+### Example 1: Analyze Malware Hash
 
 ```bash
-python intel_pipeline.py autopilot-once
+curl -X POST http://localhost:8000/api/retrace \
+  -F "hash_value=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" \
+  -F "enable_vt_lookup=true"
 ```
 
-Continuous automatic updates every 2 hours:
+### Example 2: Upload Malware Sample
 
 ```bash
-python intel_pipeline.py autopilot-watch --interval-min 120
+curl -X POST http://localhost:8000/api/retrace \
+  -F "file=@malware_sample.exe" \
+  -F "enable_sandbox=true"
 ```
 
-`autopilot` also performs periodic MITRE ATT&CK sync (cached, default every 24h) to refresh group-technique mappings.
+### Example 3: Multi-File Attribution
 
-If you want aggressive direct updates, lower thresholds:
-
-```bash
-python intel_pipeline.py autopilot-once --min-support 1 --min-evidence 0.45 --force
+```javascript
+// Dashboard: Load demo files and run attribution
+// 1. Click "Attribution" tab
+// 2. Click "📂 Load Demo" button
+// 3. Click "🔍 Run Attribution"
+// 4. View results with confidence scores and explainability
 ```
-
-Optional: set `NVD_API_KEY` env var for higher NVD API throughput.
-
-Status command:
-
-```bash
-python intel_pipeline.py status
-```
-
-Artifacts produced:
-
-- Queue: `intel/raw_queue.jsonl`
-- Candidate diffs: `intel/candidate_updates.json`
-- Human decisions: `intel/review_sheet.json`
-- Change log: `intel/change_log.jsonl`
-- Profile backups: `backups/apt_profiles.<timestamp>.json`
-
-Accuracy note:
-- Real-time ingestion and auto-updates are implemented, but no production attribution system can guarantee 100% accuracy.
-- Keep regression guards enabled (`--max-changed-hyp`) and monitor `intel/change_log.jsonl`.
-
-### 3) Confidence gates before attribution
-
-PRISM now enforces:
-
-- Minimum evidence breadth (technique count + tactic coverage)
-- Minimum top score and lead over runner-up
-- Emerging-cluster fallback when evidence is weak or novel
-
-Weak cases are shown as **hypotheses**, not confirmed actor labels.
-
-### 4) Emerging cluster memory
-
-Unattributed novel incidents are persisted to `emerging_clusters.json` with:
-
-- `cluster_id`
-- `first_seen`, `last_seen`
-- `sightings`
-- rolling techniques/context and top hypotheses
-
-This lets you track repeat campaigns before naming an actor.
 
 ---
 
-## The Bigger Picture
+## 🔬 Analysis Pipeline
 
-This is not just a hackathon project. The infrastructure being built here — a behavioral attribution layer above raw detection — is what national CERTs, SOC teams, and incident responders need as the cyber dimension of geopolitical conflict intensifies.
-
-VirusTotal solved yesterday's problem. PRISM is built for the threat environment that is already here.
+```
+Input (Malware/Hash/Logs)
+    ↓
+Static Analysis → Extract hashes, imports, strings, entropy
+    ↓
+VirusTotal Lookup → Enrich with detection ratios and tags
+    ↓
+Sandbox Execution → Monitor runtime behaviors (simulated)
+    ↓
+TTP Extraction → Map to MITRE ATT&CK techniques
+    ↓
+Family Matching → Compare with known malware families
+    ↓
+Threat Intel Correlation → Match with APT campaigns
+    ↓
+ML Attribution → XGBoost classification with SHAP explainability
+    ↓
+Output: APT Group + Confidence + Reasoning
+```
 
 ---
 
-*Built during a period when knowing your adversary is no longer optional.*
+## 📊 Expected Output
+
+```json
+{
+  "top_match": {
+    "apt_group": "Lazarus Group",
+    "malware_family": "Manuscrypt",
+    "confidence_pct": 87.3
+  },
+  "attribution_reasoning": {
+    "primary_indicators": {
+      "malware_family": "Manuscrypt",
+      "apt_mapping": "Lazarus Group",
+      "ttp_count": 12
+    },
+    "supporting_evidence": {
+      "matched_ttps": ["T1566.001", "T1059.001", "T1055"],
+      "threat_intel_campaigns": ["Operation Dream Job"],
+      "vt_detection": "48/72"
+    }
+  },
+  "verdict": "HIGH"
+}
+```
+
+---
+```
+
+### 6. Login to Dashboard
+Navigate to: **http://localhost:8000/**
+
+**Default Credentials:**
+```
+Email:    jk2302@gmail.com
+Password: Jk@9176101672
+```
+
+⚠️ **Change these credentials in production!** See `LOGIN_CREDENTIALS.md` for details.
+
+---
+
+## 📊 Features
+
+### ✅ Attribution Engine
+- **Multi-file analysis**: Attack scenarios, TTPs, IOCs, and logs
+- **ML-powered**: XGBoost classifier with 94.2% accuracy
+- **SHAP explainability**: Understand why predictions were made
+- **Confidence tiers**: HIGH (≥70%), MEDIUM (45-70%), LOW (<45%)
+
+### ✅ Malware Analysis
+- **Static analysis**: Hash, strings, PE headers
+- **Family attribution**: Map malware to APT groups
+- **VirusTotal integration**: Enrichment and validation
+
+### ✅ Blast Radius
+- **3D attack graph**: Visualize IOC relationships
+- **Multi-hop expansion**: 1-3 hop traversal
+- **Kill-chain mapping**: Delivery → C2 → Exfiltration
+- **Attribution hints**: Behavioral graph analysis
+
+### ✅ Threat Intelligence
+- **CISA KEV**: Known Exploited Vulnerabilities
+- **NVD**: Critical CVEs (last 7 days)
+- **MITRE ATT&CK**: Latest groups and techniques
+
+### ✅ ML Engine
+- **Per-group accuracy**: Track model performance
+- **SHAP feature importance**: Top contributing features
+- **Confusion matrix**: Detailed classification metrics
+- **Continuous learning**: Analyst feedback → training samples
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     dashboard.html                          │
+│              (Wazuh-style UI - Pure HTML/JS)                │
+└────────────────────┬────────────────────────────────────────┘
+                     │ HTTP/JSON
+                     ▼
+┌─────────────────────────────────────────────────────────────┐
+│              FastAPI Backend (main.py)                      │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │  Routers:                                            │  │
+│  │  • /api/analyze       → Attribution                  │  │
+│  │  • /api/retrace       → Malware Analysis             │  │
+│  │  • /api/blast-radius  → Graph Expansion              │  │
+│  │  • /api/profiles      → APT Profiles                 │  │
+│  │  • /api/ml/*          → ML Management                │  │
+│  │  • /api/intel/*       → Threat Intel Pipeline        │  │
+│  │  • /api/history       → Analysis History             │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────┬───────────────┬──────────────┬──────────────┬─────────┘
+      │               │              │              │
+      ▼               ▼              ▼              ▼
+┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
+│ engine.py│   │ml_engine │   │   db.py  │   │vt_client │
+│          │   │   .py    │   │          │   │   .py    │
+│ TTP      │   │ XGBoost  │   │ Supabase │   │ VT API   │
+│Extraction│   │  Model   │   │PostgreSQL│   │Integration│
+└──────────┘   └──────────┘   └──────────┘   └──────────┘
+```
+
+---
+
+## 📁 Project Structure
+
+```
+APTRACE-Malware-retrace/
+├── dashboard.html              # Main UI (served by backend)
+├── start.bat / start.sh        # Quick start scripts
+├── START_DASHBOARD.md          # Detailed setup guide
+│
+├── backend/                    # FastAPI backend
+│   ├── main.py                # Server entry point
+│   ├── db.py                  # Supabase client
+│   ├── ml_engine.py           # XGBoost model
+│   ├── config.py              # Configuration
+│   ├── requirements.txt       # Backend dependencies
+│   └── routers/
+│       ├── analyze.py         # Attribution endpoint
+│       ├── retrace.py         # Malware analysis
+│       ├── blast_radius.py    # Graph expansion
+│       ├── profiles.py        # APT profiles
+│       ├── ml.py              # ML management
+│       ├── intel.py           # Threat intel pipeline
+│       └── history.py         # Analysis history
+│
+├── engine.py                  # TTP extraction engine
+├── vt_client.py               # VirusTotal integration
+├── blast_radius.py            # Graph expansion logic
+├── cluster_memory.py          # Emerging cluster detection
+├── intel_pipeline.py          # Threat intel processing
+│
+├── data/                      # Static data
+│   ├── apt_profiles.json      # APT group profiles
+│   ├── malware_family_db.json # Malware families
+│   └── emerging_clusters.json # Novel attack patterns
+│
+├── ml/                        # Machine learning
+│   ├── train_model.py         # Model training
+│   ├── generate_training_data.py
+│   ├── feature_engineering.py
+│   ├── data/
+│   │   └── training_data.csv
+│   └── models/
+│       ├── prism_model.pkl    # Trained model
+│       ├── feature_schema.json
+│       └── training_metrics.json
+│
+├── supabase/                  # Database
+│   ├── schema.sql             # Database schema
+│   └── migrate_data.py        # Data migration
+│
+├── intel/                     # Threat intel cache
+│   ├── attack_stix_cache.json
+│   ├── candidate_updates.json
+│   └── change_log.jsonl
+│
+├── examples/                  # Test data
+│   ├── attack_scenario_lazarus.txt
+│   ├── ttps_lazarus.txt
+│   ├── iocs_lazarus.txt
+│   └── sysmon_logs_lazarus.log
+│
+└── tests/                     # Test files
+    └── test_ml_retrace.py
+```
+
+---
+
+## 🔌 API Endpoints
+
+### Authentication
+- `POST /api/auth/login` - User login
+  ```json
+  {
+    "username": "jk2302@gmail.com",
+    "password": "Jk@9176101672"
+  }
+  ```
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user
+
+### Attribution
+- `POST /api/analyze` - Run attribution analysis
+  ```json
+  {
+    "text": "Threat report text...",
+    "input_mode": "analyst_text"
+  }
+  ```
+
+### Malware Analysis
+- `POST /api/retrace` - Analyze malware sample
+  ```bash
+  curl -X POST http://localhost:8000/api/retrace \
+    -F "file=@malware.exe"
+  ```
+
+### Blast Radius
+- `POST /api/blast-radius` - Expand IOC relationships
+  ```json
+  {
+    "ioc": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "depth": 2,
+    "max_children": 10
+  }
+  ```
+
+### APT Profiles
+- `GET /api/profiles` - List all APT groups
+- `GET /api/profiles/{name}` - Get specific group profile
+
+### ML Management
+- `GET /api/ml/stats` - Training dataset statistics
+- `GET /api/ml/drift` - Model drift metrics
+- `POST /api/ml/retrain` - Trigger model retraining
+
+### History
+- `GET /api/history` - List analysis history
+- `GET /api/history/{id}` - Get analysis details
+
+### Health Check
+- `GET /health` - Backend status and ML model info
+
+**Full API documentation**: http://localhost:8000/docs
+
+---
+
+## 🧠 ML Model
+
+### Training
+```bash
+cd ml
+python train_model.py
+```
+
+### Performance Metrics
+- **Accuracy**: 94.2%
+- **Precision**: 92.7% (macro-avg)
+- **Recall**: 91.4% (macro-avg)
+- **F1 Score**: 92.0%
+- **Training Samples**: 3,847
+
+### Tracked APT Groups (13)
+1. Lazarus Group (North Korea)
+2. APT28 (Russia)
+3. APT29 (Russia)
+4. Sandworm (Russia)
+5. APT41 (China)
+6. Volt Typhoon (China)
+7. Salt Typhoon (China)
+8. APT35 (Iran)
+9. MuddyWater (Iran)
+10. OilRig (Iran)
+11. Kimsuky (North Korea)
+12. Transparent Tribe (Pakistan)
+13. Turla (Russia)
+
+---
+
+## 🗄️ Database Schema
+
+### Tables
+- `analyses` - Attribution results
+- `apt_profiles` - APT group profiles
+- `malware_families` - Malware family database
+- `training_samples` - ML training data
+- `intel_items` - Threat intelligence feed
+
+### Setup
+```bash
+cd supabase
+python migrate_data.py
+```
+
+---
+
+## 🔧 Configuration
+
+### Environment Variables
+```env
+# Supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-anon-key
+
+# VirusTotal (optional)
+VT_API_KEY=your-vt-api-key
+
+# ML Model
+MODEL_PATH=ml/models/prism_model.pkl
+FEATURE_SCHEMA_PATH=ml/models/feature_schema.json
+```
+
+---
+
+## 🧪 Testing
+
+### Test Attribution
+```bash
+# Load demo data in dashboard
+1. Open http://localhost:8000/
+2. Go to Attribution tab
+3. Click "Load Demo"
+4. Click "Run Attribution"
+```
+
+### Test Malware Analysis
+```bash
+curl -X POST http://localhost:8000/api/retrace \
+  -F "file=@tests/APT_Test_Sample_Lazarus.exe"
+```
+
+### Test Blast Radius
+```bash
+# Use demo button in dashboard Blast Radius tab
+```
+
+---
+
+## 📚 Documentation
+
+- **Setup Guide**: `START_DASHBOARD.md`
+- **API Docs**: http://localhost:8000/docs
+- **Multi-File Usage**: `MULTI_FILE_USAGE.md`
+- **Architecture**: `ARCHITECTURE_MULTI_FILE.md`
+
+---
+
+## 🛠️ Development
+
+### Add New APT Group
+1. Edit `data/apt_profiles.json`
+2. Add training samples to `ml/data/training_data.csv`
+3. Retrain model: `cd ml && python train_model.py`
+4. Restart backend
+
+### Add New Malware Family
+1. Edit `data/malware_family_db.json`
+2. Or use Supabase UI to add to `malware_families` table
+
+### Customize Dashboard
+- Edit `dashboard.html` (pure HTML/CSS/JS)
+- No build step required
+- Refresh browser to see changes
+
+---
+
+## 🐛 Troubleshooting
+
+### Backend won't start
+- Check port 8000 is available
+- Verify Supabase credentials in `.env`
+- Install dependencies: `pip install -r backend/requirements.txt`
+
+### Dashboard shows "Engine Offline"
+- Backend must be running on port 8000
+- Check browser console for errors
+- Verify CORS is enabled in `backend/main.py`
+
+### Attribution returns low confidence
+- ML model may need retraining
+- Check if input has enough TTPs (minimum 4-6)
+- Verify `ml/models/prism_model.pkl` exists
+
+### Blast Radius not working
+- Requires VirusTotal API key in `.env`
+- Check VT API quota (free tier: 4 requests/min)
+- Use demo mode for testing without API key
+
+---
+
+## 📝 License
+
+MIT License - See LICENSE file for details
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature-name`
+3. Commit changes: `git commit -am 'Add feature'`
+4. Push to branch: `git push origin feature-name`
+5. Submit pull request
+
+---
+
+## 📧 Support
+
+For issues and questions:
+- Open an issue on GitHub
+- Check `START_DASHBOARD.md` for detailed setup
+- Review API docs at http://localhost:8000/docs
+
+---
+
+**Built with ❤️ for threat intelligence analysts**
