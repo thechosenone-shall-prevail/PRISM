@@ -1002,6 +1002,136 @@ if "malware_result" in st.session_state:
                 }
             )
 
+        # -- Knowledge Graph ------------------------------------------------
+        if rows and len(rows) >= 2:
+            st.markdown("---")
+            st.markdown(
+                "<div class='section-header' style='margin-top:24px;'>THREAT ACTOR KNOWLEDGE GRAPH</div>",
+                unsafe_allow_html=True
+            )
+            st.caption("Network of top matched threat actors — node size ∝ similarity score · edges = shared TTPs · color = nation-state origin")
+
+            import math
+
+            # Build TTP lookup from loaded profiles
+            group_profile_map: dict = {}
+            for g in profiles.get("apt_groups", []):
+                all_g_techs: set = set()
+                for tactic_techs in g.get("ttps", {}).values():
+                    all_g_techs.update(tactic_techs)
+                group_profile_map[g["name"]] = {
+                    "techs": all_g_techs,
+                    "nation": g.get("nation", "Unknown"),
+                    "aliases": g.get("aliases", []),
+                }
+
+            graph_rows = sorted(rows, key=lambda x: x["Similarity"], reverse=True)[:5]
+            families = [r["Family"] for r in graph_rows]
+            num_nodes = len(families)
+
+            # Layout: top match at center, rest circular
+            angles = [2 * math.pi * i / max(num_nodes - 1, 1) for i in range(num_nodes - 1)]
+            positions: dict = {}
+            positions[families[0]] = (0.0, 0.0)
+            for fam, a in zip(families[1:], angles):
+                positions[fam] = (math.cos(a) * 1.1, math.sin(a) * 1.1)
+
+            NATION_COLORS_KG = {
+                "Russia": "#dc2626", "China": "#ea580c", "North Korea": "#f59e0b",
+                "Iran": "#2563eb", "Pakistan": "#16a34a", "Unknown": "#6b7280",
+            }
+
+            # Build edges
+            fig_kg = go.Figure()
+            overlap_rows_kg = []
+            for i in range(num_nodes):
+                for j in range(i + 1, num_nodes):
+                    f1, f2 = families[i], families[j]
+                    t1 = group_profile_map.get(f1, {}).get("techs", set())
+                    t2 = group_profile_map.get(f2, {}).get("techs", set())
+                    shared = t1 & t2
+                    x0, y0 = positions[f1]
+                    x1, y1 = positions[f2]
+                    shared_count = len(shared)
+                    opacity = max(0.12, min(0.85, 0.12 + shared_count * 0.05))
+                    width = max(0.8, min(5.0, 0.8 + shared_count * 0.18))
+                    fig_kg.add_trace(go.Scatter(
+                        x=[x0, x1, None], y=[y0, y1, None],
+                        mode="lines",
+                        line=dict(color="#00ff41", width=width),
+                        opacity=opacity,
+                        hoverinfo="text",
+                        text=f"{f1} ↔ {f2}: {shared_count} shared TTPs",
+                        showlegend=False,
+                    ))
+                    if shared:
+                        overlap_rows_kg.append({
+                            "Pair": f"{f1} ↔ {f2}",
+                            "Shared TTPs": shared_count,
+                            "Top Techniques": ", ".join(sorted(shared)[:6]) + ("…" if shared_count > 6 else ""),
+                        })
+
+            # Build nodes
+            node_x, node_y, node_text, node_hover, node_colors, node_sizes = [], [], [], [], [], []
+            _seen_nations: set = set()
+            for r in graph_rows:
+                fam = r["Family"]
+                sim = r["Similarity"]
+                x, y = positions[fam]
+                info = group_profile_map.get(fam, {})
+                nation = info.get("nation", "Unknown")
+                techs = info.get("techs", set())
+                aliases = info.get("aliases", [])
+                color = NATION_COLORS_KG.get(nation, NATION_COLORS_KG["Unknown"])
+                node_x.append(x); node_y.append(y)
+                node_text.append(fam)
+                node_hover.append(
+                    f"<b>{fam}</b><br>Nation: {nation}<br>Similarity: {sim:.0f}%"
+                    f"<br>Known TTPs: {len(techs)}"
+                    f"<br>Aliases: {', '.join(aliases[:3]) if aliases else 'N/A'}"
+                )
+                node_colors.append(color)
+                node_sizes.append(max(28, min(64, 20 + sim * 0.5)))
+                if nation not in _seen_nations:
+                    _seen_nations.add(nation)
+                    fig_kg.add_trace(go.Scatter(
+                        x=[None], y=[None], mode="markers",
+                        marker=dict(size=10, color=color),
+                        name=nation, showlegend=True,
+                    ))
+
+            fig_kg.add_trace(go.Scatter(
+                x=node_x, y=node_y,
+                mode="markers+text",
+                marker=dict(size=node_sizes, color=node_colors, line=dict(color="#00ff41", width=1.5), opacity=0.95),
+                text=node_text,
+                textposition="top center",
+                textfont=dict(color="#e2e8f0", size=11, family="Inter, sans-serif"),
+                hovertext=node_hover,
+                hovertemplate="%{hovertext}<extra></extra>",
+                showlegend=False,
+            ))
+
+            fig_kg.update_layout(
+                **_PLOT_LAYOUT,
+                showlegend=True,
+                legend=dict(font=dict(color="#94a3b8", size=10), bgcolor="rgba(0,0,0,0)",
+                            bordercolor="#1a1a1a", borderwidth=1, x=1.01, y=1.0, xanchor="left"),
+                height=480,
+                xaxis=dict(visible=False, range=[-1.8, 1.8]),
+                yaxis=dict(visible=False, range=[-1.8, 1.8]),
+                plot_bgcolor="rgba(5,5,5,1)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                hoverlabel=dict(bgcolor="#0f0f0f", font_color="#e2e8f0", bordercolor="#1a1a1a"),
+            )
+            st.plotly_chart(fig_kg, use_container_width=True)
+
+            if overlap_rows_kg:
+                st.markdown("<div class='section-header'>SHARED TTP OVERLAP MATRIX</div>", unsafe_allow_html=True)
+                st.dataframe(pd.DataFrame(overlap_rows_kg), use_container_width=True, hide_index=True)
+            else:
+                st.caption("No shared TTPs detected between the top matched groups.")
+
     with mtab2:
         if top_family:
             st.markdown('<div class="section-header">Matched Indicators</div>', unsafe_allow_html=True)
