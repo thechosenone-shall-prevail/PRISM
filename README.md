@@ -1,556 +1,194 @@
-# 🎯 PRISM - APT Attribution Engine
+# PRISM — APT Attribution Engine
 
-**ML-powered malware retracing and threat actor identification with explainable results**
+PRISM is a threat attribution platform that traces malware samples and attack data back to known APT groups. It combines static analysis, MITRE ATT&CK mapping, sandbox behavioral analysis, and an XGBoost ML classifier to produce explainable attribution results with confidence scoring.
 
-PRISM is an advanced APT (Advanced Persistent Threat) attribution system that uses machine learning, behavioral analysis, sandbox integration, and MITRE ATT&CK framework to identify threat actors from malware samples, attack data, and threat intelligence.
-
-![Dashboard](https://img.shields.io/badge/Dashboard-Professional-1a3a5c?style=for-the-badge)
-![ML](https://img.shields.io/badge/ML-XGBoost_94.2%25-c53030?style=for-the-badge)
-![Backend](https://img.shields.io/badge/Backend-FastAPI-38a169?style=for-the-badge)
-![Database](https://img.shields.io/badge/Database-Supabase-2b6cb0?style=for-the-badge)
+**Live instance**: [http://57.159.31.206/dashboard.html](http://57.159.31.206/dashboard.html)
 
 ---
 
-## ✨ Key Features
+## What it does
 
-### 🔬 Malware Retracing
-- **Static Analysis**: PE headers, imports, strings, entropy, hashes (MD5, SHA1, SHA256, imphash)
-- **Hash Lookup**: Automatic VirusTotal enrichment for known samples
-- **Sandbox Integration**: Runtime behavior analysis (simulated, ready for Cuckoo/ANY.RUN)
-- **Family Matching**: Similarity scoring against 50+ known malware families
-- **TTP Extraction**: Automatic MITRE ATT&CK technique identification
+- Accepts malware binaries (PE files), attack scenario descriptions, TTP lists, IOC sets, and sysmon logs
+- Runs static analysis on executables: PE headers, imports, strings, entropy, hashes
+- Extracts MITRE ATT&CK techniques from all input types
+- Matches against 50+ known malware families with similarity scoring
+- Attributes to 14 tracked APT groups using a trained XGBoost model (85.6% accuracy, 407 features)
+- Enriches with VirusTotal lookups when API key is configured
+- Generates AI-powered threat reports via DeepSeek LLM with exportable PDF/HTML/JSON
+- Visualizes blast radius as a 3D force-directed attack graph
 
-### 🎯 APT Attribution
-- **ML-Powered**: XGBoost classifier with 94.2% accuracy
-- **Multi-Input**: Files, hashes, logs, IOCs, attack scenarios
-- **Explainable Results**: SHAP-based feature importance and reasoning
-- **Threat Intel Correlation**: Campaign matching with confidence scores
-- **Real-Time Feeds**: CISA KEV, NVD, MITRE ATT&CK integration
+## Architecture
 
-### 📊 Professional Dashboard
-- **Wazuh-Inspired UI**: Clean, professional security operations interface
-- **Multi-File Upload**: Comprehensive analysis from multiple data sources
-- **Live Intelligence**: Real-time threat feed integration
-- **3D Visualization**: Blast radius attack graph
-- **Historical Analysis**: Track attribution trends over time
-
----
-
-## 🚀 Quick Start
-
-### Option 1: One-Click Start (Recommended)
-
-#### Windows
-```bash
-cd APTRACE-Malware-retrace
-./start.bat
+```
+dashboard.html (vanilla JS, Chart.js, 3D Force Graph)
+        |
+        | HTTP/JSON
+        v
+FastAPI backend (uvicorn, port 8000)
+  |-- /api/analyze       Attribution engine
+  |-- /api/retrace       Malware retrace pipeline
+  |-- /api/sandbox       Static + behavioral analysis
+  |-- /api/blast-radius  IOC graph expansion
+  |-- /api/report        AI report generation (DeepSeek)
+  |-- /api/ml/*          Model stats, drift, retraining
+  |-- /api/intel/*       Threat intel feeds (CISA, NVD, ATT&CK)
+  |-- /api/profiles      APT group profiles
+  |-- /api/history       Analysis history (Supabase)
+  |-- /api/auth          Session-based authentication
+        |
+        +-- engine.py        TTP extraction
+        +-- ml_engine.py     XGBoost inference + SHAP
+        +-- vt_client.py     VirusTotal API
+        +-- blast_radius.py  Graph traversal
+        +-- cluster_memory.py  Emerging threat clustering
+        +-- intel_pipeline.py  Feed ingestion
 ```
 
-#### Linux/Mac
-```bash
-cd APTRACE-Malware-retrace
+## Tracked APT Groups
+
+Lazarus Group, APT28, APT29, Sandworm, APT41, Volt Typhoon, Salt Typhoon, APT35, MuddyWater, OilRig, Kimsuky, Transparent Tribe, Turla, and an Unknown/Emerging class for novel threats.
+
+## Setup
+
+### Prerequisites
+
+- Python 3.10+
+- pip
+
+### Quick start
+
+**Windows:**
+```
+start.bat
+```
+
+**Linux/Mac:**
+```
 chmod +x start.sh
 ./start.sh
 ```
 
-Then open: **http://localhost:8000/**
+### Manual setup
 
-**Demo Credentials**:
-- Email: `jk2302@gmail.com`
-- Password: `Jk@9176101672`
-
-### Option 2: Manual Setup
-
-#### 1. Install Dependencies
 ```bash
+# Install dependencies
 pip install -r requirements.txt
+pip install -r backend/requirements.txt
+
+# Configure environment
+cp backend/.env.example backend/.env
+# Edit backend/.env with your API keys (all optional)
+
+# Start the server
 cd backend
-pip install -r requirements.txt
+uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-#### 2. Configure Environment (Optional)
-Create `backend/.env`:
-```env
-# Optional: VirusTotal API for hash enrichment
-VT_API_KEY=your_virustotal_api_key
+Open [http://localhost:8000/dashboard.html](http://localhost:8000/dashboard.html)
 
-# Optional: Supabase for cloud storage
-SUPABASE_URL=your_supabase_project_url
-SUPABASE_KEY=your_supabase_anon_key
-```
+### Environment variables
 
-#### 3. Start Backend
-```bash
-cd backend
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
+All optional. Set in `backend/.env`:
 
-#### 4. Access Dashboard
-Open browser: **http://localhost:8000/**
+| Variable | Purpose |
+|----------|---------|
+| `VT_API_KEY` | VirusTotal enrichment |
+| `DEEPSEEK_API_KEY` | AI report generation |
+| `SUPABASE_URL` | Cloud storage for history |
+| `SUPABASE_ANON_KEY` | Supabase auth |
+| `PRISM_AUTH_USER` | Login username (default: `admin@prism.local`) |
+| `PRISM_AUTH_PASS` | Login password (default: `changeme`) |
 
----
+### Azure deployment
 
-## 📖 Documentation
-
-- **[Quick Start Guide](QUICK_START.md)** - Get started in 5 minutes
-- **[Enhanced Features](ENHANCED_FEATURES.md)** - Detailed feature documentation
-- **[Workflow Guide](WORKFLOW.md)** - Operational procedures
-- **[Current Status](CURRENT_STATUS.md)** - System status and roadmap
-
----
-
-## 🎯 Usage Examples
-
-### Example 1: Analyze Malware Hash
+A deployment script is included for Ubuntu VMs:
 
 ```bash
-curl -X POST http://localhost:8000/api/retrace \
-  -F "hash_value=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855" \
-  -F "enable_vt_lookup=true"
+scp -r . azureuser@YOUR_IP:~/APTRACE-Malware-retrace/
+ssh azureuser@YOUR_IP "bash ~/APTRACE-Malware-retrace/deploy_azure.sh"
 ```
 
-### Example 2: Upload Malware Sample
+This sets up a systemd service + nginx reverse proxy on port 80.
 
+## Usage
+
+### Dashboard
+
+The dashboard has 9 tabs:
+
+1. **Overview** — System health, recent analyses, threat feed summary
+2. **Attribution** — Upload files (scenarios, TTPs, IOCs, logs, malware) and run multi-source attribution
+3. **Threat Intel** — Live feeds from CISA KEV, NVD, and MITRE ATT&CK
+4. **TTP Analysis** — MITRE technique breakdown with tactic heatmaps
+5. **ML Engine** — Model performance metrics, per-group accuracy, feature importance
+6. **Malware Families** — Known family database with APT mappings
+7. **Sandbox Timeline** — Upload PE files for static analysis with kill-chain timeline
+8. **Blast Radius** — 3D graph expansion from IOCs (hashes, IPs, domains)
+9. **Report** — Generate comprehensive AI-powered threat reports
+
+### API examples
+
+**Analyze malware:**
 ```bash
-curl -X POST http://localhost:8000/api/retrace \
-  -F "file=@malware_sample.exe" \
-  -F "enable_sandbox=true"
+curl -X POST http://localhost:8000/api/retrace -F "file=@sample.exe"
 ```
 
-### Example 3: Multi-File Attribution
-
-```javascript
-// Dashboard: Load demo files and run attribution
-// 1. Click "Attribution" tab
-// 2. Click "📂 Load Demo" button
-// 3. Click "🔍 Run Attribution"
-// 4. View results with confidence scores and explainability
+**Text-based attribution:**
+```bash
+curl -X POST http://localhost:8000/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Spearphishing with macro-enabled docs, PowerShell C2, credential dumping via Mimikatz", "input_mode": "analyst_text"}'
 ```
 
----
-
-## 🔬 Analysis Pipeline
-
-```
-Input (Malware/Hash/Logs)
-    ↓
-Static Analysis → Extract hashes, imports, strings, entropy
-    ↓
-VirusTotal Lookup → Enrich with detection ratios and tags
-    ↓
-Sandbox Execution → Monitor runtime behaviors (simulated)
-    ↓
-TTP Extraction → Map to MITRE ATT&CK techniques
-    ↓
-Family Matching → Compare with known malware families
-    ↓
-Threat Intel Correlation → Match with APT campaigns
-    ↓
-ML Attribution → XGBoost classification with SHAP explainability
-    ↓
-Output: APT Group + Confidence + Reasoning
+**Blast radius expansion:**
+```bash
+curl -X POST http://localhost:8000/api/blast-radius \
+  -H "Content-Type: application/json" \
+  -d '{"ioc": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "depth": 2}'
 ```
 
----
+**API documentation:** [http://localhost:8000/docs](http://localhost:8000/docs)
 
-## 📊 Expected Output
+## ML Model
 
-```json
-{
-  "top_match": {
-    "apt_group": "Lazarus Group",
-    "malware_family": "Manuscrypt",
-    "confidence_pct": 87.3
-  },
-  "attribution_reasoning": {
-    "primary_indicators": {
-      "malware_family": "Manuscrypt",
-      "apt_mapping": "Lazarus Group",
-      "ttp_count": 12
-    },
-    "supporting_evidence": {
-      "matched_ttps": ["T1566.001", "T1059.001", "T1055"],
-      "threat_intel_campaigns": ["Operation Dream Job"],
-      "vt_detection": "48/72"
-    }
-  },
-  "verdict": "HIGH"
-}
-```
+- **Algorithm**: XGBoost (multi-class)
+- **Accuracy**: 85.6%
+- **Features**: 407 (TTP presence, behavioral signals, string patterns, import patterns)
+- **Training samples**: 5,600
+- **Classes**: 14 (13 APT groups + Unknown)
+- **Explainability**: SHAP feature importance per prediction
 
----
-```
+### Retraining
 
-### 6. Login to Dashboard
-Navigate to: **http://localhost:8000/**
-
-**Default Credentials:**
-```
-Email:    jk2302@gmail.com
-Password: Jk@9176101672
-```
-
-⚠️ **Change these credentials in production!** See `LOGIN_CREDENTIALS.md` for details.
-
----
-
-## 📊 Features
-
-### ✅ Attribution Engine
-- **Multi-file analysis**: Attack scenarios, TTPs, IOCs, and logs
-- **ML-powered**: XGBoost classifier with 94.2% accuracy
-- **SHAP explainability**: Understand why predictions were made
-- **Confidence tiers**: HIGH (≥70%), MEDIUM (45-70%), LOW (<45%)
-
-### ✅ Malware Analysis
-- **Static analysis**: Hash, strings, PE headers
-- **Family attribution**: Map malware to APT groups
-- **VirusTotal integration**: Enrichment and validation
-
-### ✅ Blast Radius
-- **3D attack graph**: Visualize IOC relationships
-- **Multi-hop expansion**: 1-3 hop traversal
-- **Kill-chain mapping**: Delivery → C2 → Exfiltration
-- **Attribution hints**: Behavioral graph analysis
-
-### ✅ Threat Intelligence
-- **CISA KEV**: Known Exploited Vulnerabilities
-- **NVD**: Critical CVEs (last 7 days)
-- **MITRE ATT&CK**: Latest groups and techniques
-
-### ✅ ML Engine
-- **Per-group accuracy**: Track model performance
-- **SHAP feature importance**: Top contributing features
-- **Confusion matrix**: Detailed classification metrics
-- **Continuous learning**: Analyst feedback → training samples
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     dashboard.html                          │
-│              (Wazuh-style UI - Pure HTML/JS)                │
-└────────────────────┬────────────────────────────────────────┘
-                     │ HTTP/JSON
-                     ▼
-┌─────────────────────────────────────────────────────────────┐
-│              FastAPI Backend (main.py)                      │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │  Routers:                                            │  │
-│  │  • /api/analyze       → Attribution                  │  │
-│  │  • /api/retrace       → Malware Analysis             │  │
-│  │  • /api/blast-radius  → Graph Expansion              │  │
-│  │  • /api/profiles      → APT Profiles                 │  │
-│  │  • /api/ml/*          → ML Management                │  │
-│  │  • /api/intel/*       → Threat Intel Pipeline        │  │
-│  │  • /api/history       → Analysis History             │  │
-│  └──────────────────────────────────────────────────────┘  │
-└─────┬───────────────┬──────────────┬──────────────┬─────────┘
-      │               │              │              │
-      ▼               ▼              ▼              ▼
-┌──────────┐   ┌──────────┐   ┌──────────┐   ┌──────────┐
-│ engine.py│   │ml_engine │   │   db.py  │   │vt_client │
-│          │   │   .py    │   │          │   │   .py    │
-│ TTP      │   │ XGBoost  │   │ Supabase │   │ VT API   │
-│Extraction│   │  Model   │   │PostgreSQL│   │Integration│
-└──────────┘   └──────────┘   └──────────┘   └──────────┘
-```
-
----
-
-## 📁 Project Structure
-
-```
-APTRACE-Malware-retrace/
-├── dashboard.html              # Main UI (served by backend)
-├── start.bat / start.sh        # Quick start scripts
-├── START_DASHBOARD.md          # Detailed setup guide
-│
-├── backend/                    # FastAPI backend
-│   ├── main.py                # Server entry point
-│   ├── db.py                  # Supabase client
-│   ├── ml_engine.py           # XGBoost model
-│   ├── config.py              # Configuration
-│   ├── requirements.txt       # Backend dependencies
-│   └── routers/
-│       ├── analyze.py         # Attribution endpoint
-│       ├── retrace.py         # Malware analysis
-│       ├── blast_radius.py    # Graph expansion
-│       ├── profiles.py        # APT profiles
-│       ├── ml.py              # ML management
-│       ├── intel.py           # Threat intel pipeline
-│       └── history.py         # Analysis history
-│
-├── engine.py                  # TTP extraction engine
-├── vt_client.py               # VirusTotal integration
-├── blast_radius.py            # Graph expansion logic
-├── cluster_memory.py          # Emerging cluster detection
-├── intel_pipeline.py          # Threat intel processing
-│
-├── data/                      # Static data
-│   ├── apt_profiles.json      # APT group profiles
-│   ├── malware_family_db.json # Malware families
-│   └── emerging_clusters.json # Novel attack patterns
-│
-├── ml/                        # Machine learning
-│   ├── train_model.py         # Model training
-│   ├── generate_training_data.py
-│   ├── feature_engineering.py
-│   ├── data/
-│   │   └── training_data.csv
-│   └── models/
-│       ├── prism_model.pkl    # Trained model
-│       ├── feature_schema.json
-│       └── training_metrics.json
-│
-├── supabase/                  # Database
-│   ├── schema.sql             # Database schema
-│   └── migrate_data.py        # Data migration
-│
-├── intel/                     # Threat intel cache
-│   ├── attack_stix_cache.json
-│   ├── candidate_updates.json
-│   └── change_log.jsonl
-│
-├── examples/                  # Test data
-│   ├── attack_scenario_lazarus.txt
-│   ├── ttps_lazarus.txt
-│   ├── iocs_lazarus.txt
-│   └── sysmon_logs_lazarus.log
-│
-└── tests/                     # Test files
-    └── test_ml_retrace.py
-```
-
----
-
-## 🔌 API Endpoints
-
-### Authentication
-- `POST /api/auth/login` - User login
-  ```json
-  {
-    "username": "jk2302@gmail.com",
-    "password": "Jk@9176101672"
-  }
-  ```
-- `POST /api/auth/logout` - User logout
-- `GET /api/auth/me` - Get current user
-
-### Attribution
-- `POST /api/analyze` - Run attribution analysis
-  ```json
-  {
-    "text": "Threat report text...",
-    "input_mode": "analyst_text"
-  }
-  ```
-
-### Malware Analysis
-- `POST /api/retrace` - Analyze malware sample
-  ```bash
-  curl -X POST http://localhost:8000/api/retrace \
-    -F "file=@malware.exe"
-  ```
-
-### Blast Radius
-- `POST /api/blast-radius` - Expand IOC relationships
-  ```json
-  {
-    "ioc": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "depth": 2,
-    "max_children": 10
-  }
-  ```
-
-### APT Profiles
-- `GET /api/profiles` - List all APT groups
-- `GET /api/profiles/{name}` - Get specific group profile
-
-### ML Management
-- `GET /api/ml/stats` - Training dataset statistics
-- `GET /api/ml/drift` - Model drift metrics
-- `POST /api/ml/retrain` - Trigger model retraining
-
-### History
-- `GET /api/history` - List analysis history
-- `GET /api/history/{id}` - Get analysis details
-
-### Health Check
-- `GET /health` - Backend status and ML model info
-
-**Full API documentation**: http://localhost:8000/docs
-
----
-
-## 🧠 ML Model
-
-### Training
 ```bash
 cd ml
-python train_model.py
+python generate_training_data.py   # Generate synthetic training data
+python train_model.py              # Train and evaluate
 ```
 
-### Performance Metrics
-- **Accuracy**: 94.2%
-- **Precision**: 92.7% (macro-avg)
-- **Recall**: 91.4% (macro-avg)
-- **F1 Score**: 92.0%
-- **Training Samples**: 3,847
+The trained model saves to `ml/models/prism_model.pkl`.
 
-### Tracked APT Groups (13)
-1. Lazarus Group (North Korea)
-2. APT28 (Russia)
-3. APT29 (Russia)
-4. Sandworm (Russia)
-5. APT41 (China)
-6. Volt Typhoon (China)
-7. Salt Typhoon (China)
-8. APT35 (Iran)
-9. MuddyWater (Iran)
-10. OilRig (Iran)
-11. Kimsuky (North Korea)
-12. Transparent Tribe (Pakistan)
-13. Turla (Russia)
+## Project structure
 
----
+```
+backend/
+  main.py                 FastAPI app entry point
+  ml_engine.py            XGBoost inference with sparse/rich prediction paths
+  config.py               Environment config
+  routers/                API endpoints (10 routers)
 
-## 🗄️ Database Schema
+ml/
+  train_model.py          Model training pipeline
+  models/                 Saved model + metrics
+  data/                   Training data + feature schema
 
-### Tables
-- `analyses` - Attribution results
-- `apt_profiles` - APT group profiles
-- `malware_families` - Malware family database
-- `training_samples` - ML training data
-- `intel_items` - Threat intelligence feed
-
-### Setup
-```bash
-cd supabase
-python migrate_data.py
+data/                     APT profiles, malware families, emerging clusters
+intel/                    Cached threat intel feeds
+examples/                 Lazarus Group demo scenario files
+tests/                    Test scripts and sample files
+supabase/                 Database schema and migration
 ```
 
----
+## License
 
-## 🔧 Configuration
-
-### Environment Variables
-```env
-# Supabase
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-anon-key
-
-# VirusTotal (optional)
-VT_API_KEY=your-vt-api-key
-
-# ML Model
-MODEL_PATH=ml/models/prism_model.pkl
-FEATURE_SCHEMA_PATH=ml/models/feature_schema.json
-```
-
----
-
-## 🧪 Testing
-
-### Test Attribution
-```bash
-# Load demo data in dashboard
-1. Open http://localhost:8000/
-2. Go to Attribution tab
-3. Click "Load Demo"
-4. Click "Run Attribution"
-```
-
-### Test Malware Analysis
-```bash
-curl -X POST http://localhost:8000/api/retrace \
-  -F "file=@tests/APT_Test_Sample_Lazarus.exe"
-```
-
-### Test Blast Radius
-```bash
-# Use demo button in dashboard Blast Radius tab
-```
-
----
-
-## 📚 Documentation
-
-- **Setup Guide**: `START_DASHBOARD.md`
-- **API Docs**: http://localhost:8000/docs
-- **Multi-File Usage**: `MULTI_FILE_USAGE.md`
-- **Architecture**: `ARCHITECTURE_MULTI_FILE.md`
-
----
-
-## 🛠️ Development
-
-### Add New APT Group
-1. Edit `data/apt_profiles.json`
-2. Add training samples to `ml/data/training_data.csv`
-3. Retrain model: `cd ml && python train_model.py`
-4. Restart backend
-
-### Add New Malware Family
-1. Edit `data/malware_family_db.json`
-2. Or use Supabase UI to add to `malware_families` table
-
-### Customize Dashboard
-- Edit `dashboard.html` (pure HTML/CSS/JS)
-- No build step required
-- Refresh browser to see changes
-
----
-
-## 🐛 Troubleshooting
-
-### Backend won't start
-- Check port 8000 is available
-- Verify Supabase credentials in `.env`
-- Install dependencies: `pip install -r backend/requirements.txt`
-
-### Dashboard shows "Engine Offline"
-- Backend must be running on port 8000
-- Check browser console for errors
-- Verify CORS is enabled in `backend/main.py`
-
-### Attribution returns low confidence
-- ML model may need retraining
-- Check if input has enough TTPs (minimum 4-6)
-- Verify `ml/models/prism_model.pkl` exists
-
-### Blast Radius not working
-- Requires VirusTotal API key in `.env`
-- Check VT API quota (free tier: 4 requests/min)
-- Use demo mode for testing without API key
-
----
-
-## 📝 License
-
-MIT License - See LICENSE file for details
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature-name`
-5. Submit pull request
-
----
-
-## 📧 Support
-
-For issues and questions:
-- Open an issue on GitHub
-- Check `START_DASHBOARD.md` for detailed setup
-- Review API docs at http://localhost:8000/docs
-
----
-
-**Built with ❤️ for threat intelligence analysts**
+Academic / research use.

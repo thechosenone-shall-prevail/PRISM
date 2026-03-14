@@ -8,12 +8,13 @@ GET /api/auth/me — get current user
 from fastapi import APIRouter, HTTPException, Response, Request
 from pydantic import BaseModel
 from typing import Optional
+import os
 
 router = APIRouter()
 
-# Hardcoded credentials (for demo purposes)
+# Credentials from environment variables
 VALID_CREDENTIALS = {
-    "jk2302@gmail.com": "Jk@9176101672"
+    os.getenv("PRISM_AUTH_USER", "admin@prism.local"): os.getenv("PRISM_AUTH_PASS", "changeme")
 }
 
 # Simple session storage (in production, use Redis or database)
